@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCore - Patch Notes</title>
+    <meta name="description" content="GCore Season 1 patch notes and changelog. See what's new in the latest update.">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg:#0a0a0f;--surface:#121218;--surface2:#1a1a24;--border:#ffffff0a;--purple:#a463d6;--purple-glow:#cd8cff;--text:#f0eef6;--text2:#9994b0;--radius:14px}
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+        /* NAV */
+        header{position:fixed;top:0;left:0;right:0;z-index:100;backdrop-filter:blur(20px);background:rgba(10,10,15,.8);border-bottom:1px solid var(--border)}
+        .nav-inner{max-width:1100px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+        .logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;background:linear-gradient(135deg,#cd8cff,#a463d6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
+        .nav-links{display:flex;gap:24px;align-items:center}
+        .nav-links a{color:var(--text2);text-decoration:none;font-size:.85rem;font-weight:500;transition:color .2s}
+        .nav-links a:hover{color:var(--text)}
+
+        /* HERO COUNTDOWN */
+        .countdown-hero{
+            min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+            text-align:center;padding:120px 24px 60px;position:relative;overflow:hidden;
+        }
+        .countdown-hero::before{
+            content:'';position:absolute;top:-40%;left:50%;transform:translateX(-50%);
+            width:800px;height:800px;background:radial-gradient(circle,rgba(164,99,214,.15),transparent 70%);
+            pointer-events:none;
+        }
+        .countdown-label{
+            font-size:.85rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;
+            color:var(--purple-glow);margin-bottom:12px;
+        }
+        .countdown-title{
+            font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:clamp(2rem,5vw,3.5rem);
+            margin-bottom:48px;
+        }
+        .countdown-title span{background:linear-gradient(135deg,#cd8cff,#a463d6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .countdown-boxes{display:flex;gap:20px;margin-bottom:48px;flex-wrap:wrap;justify-content:center}
+        .countdown-box{
+            background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+            padding:24px 28px;min-width:120px;text-align:center;position:relative;
+            box-shadow:0 0 40px rgba(164,99,214,.05);
+        }
+        .countdown-box .num{
+            font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:clamp(2.5rem,6vw,4rem);
+            background:linear-gradient(135deg,#cd8cff,#a463d6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            line-height:1;
+        }
+        .countdown-box .unit{font-size:.75rem;font-weight:600;color:var(--text2);letter-spacing:2px;text-transform:uppercase;margin-top:8px}
+        .countdown-date{color:var(--text2);font-size:.9rem;margin-bottom:8px}
+        .countdown-date strong{color:var(--purple-glow)}
+
+        /* LIVE BADGE */
+        .live-badge{
+            display:inline-flex;align-items:center;gap:8px;
+            background:rgba(164,99,214,.1);border:1px solid rgba(164,99,214,.2);
+            border-radius:100px;padding:8px 20px;font-size:.8rem;font-weight:600;color:var(--purple-glow);
+            margin-bottom:32px;animation:badgePulse 2s ease infinite;
+        }
+        .live-badge .dot{width:8px;height:8px;border-radius:50%;background:#cd8cff;animation:dotPulse 1.5s ease infinite}
+        @keyframes badgePulse{0%,100%{box-shadow:0 0 0 0 rgba(164,99,214,.2)}50%{box-shadow:0 0 20px 4px rgba(164,99,214,.1)}}
+        @keyframes dotPulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+        /* LAUNCHED STATE */
+        .launched-msg{
+            font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:clamp(2rem,5vw,3.5rem);
+            background:linear-gradient(135deg,#4ade80,#22c55e);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            margin-bottom:24px;display:none;
+        }
+        .launched-sub{color:var(--text2);font-size:1rem;display:none;margin-bottom:48px}
+        body.is-launched .launched-msg,body.is-launched .launched-sub{display:block}
+        body.is-launched .countdown-boxes,body.is-launched .countdown-label,body.is-launched .countdown-title,body.is-launched .live-badge{display:none}
+
+        /* PATCH NOTES SECTION */
+        .patch-section{max-width:800px;margin:0 auto;padding:0 24px 100px}
+        .patch-header{
+            display:flex;align-items:center;gap:16px;margin-bottom:40px;padding-bottom:20px;
+            border-bottom:1px solid var(--border);
+        }
+        .patch-version{
+            font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.8rem;
+            background:linear-gradient(135deg,#cd8cff,#a463d6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+        }
+        .patch-tag{
+            font-size:.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+            background:linear-gradient(135deg,#cd8cff,#a463d6);color:#fff;
+            padding:4px 12px;border-radius:100px;
+        }
+        .patch-date{margin-left:auto;color:var(--text2);font-size:.85rem}
+
+        .patch-category{margin-bottom:36px}
+        .patch-category h3{
+            font-size:1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px;
+        }
+        .patch-category h3 .icon{font-size:1.2rem}
+        .patch-category ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+        .patch-category li{
+            padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;
+            font-size:.9rem;color:var(--text2);line-height:1.5;display:flex;align-items:flex-start;gap:10px;
+        }
+        .patch-category li .bullet{color:var(--purple-glow);font-weight:700;flex-shrink:0;margin-top:1px}
+
+        .patch-empty{
+            text-align:center;padding:80px 24px;color:var(--text2);
+        }
+        .patch-empty .icon{font-size:3rem;margin-bottom:16px;opacity:.4}
+        .patch-empty p{font-size:1rem}
+
+        /* RESPONSIVE */
+        @media(max-width:600px){
+            .countdown-box{min-width:90px;padding:16px 18px}
+            .countdown-boxes{gap:12px}
+            .nav-links a:not([style]){display:none}
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="nav-inner">
+        <a href="index.html" class="logo">GCORE</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="tutorials.html">Tutorials</a>
+            <a href="patchnotes.html" style="color:var(--text)">Patch Notes</a>
+            <a href="https://discord.gg/eFsTzsMhBz" target="_blank">Discord</a>
+            <a href="https://gcoreminecraft.tebex.io/category/gcore-ranks" target="_blank">Store</a>
+        </div>
+    </div>
+</header>
+
+<!-- COUNTDOWN HERO -->
+<section class="countdown-hero">
+    <div class="live-badge"><span class="dot"></span> Season 1 Incoming</div>
+    <div class="countdown-label">Season 1 Launches In</div>
+    <div class="countdown-title">The Wait Is <span>Almost Over</span></div>
+
+    <div class="countdown-boxes">
+        <div class="countdown-box"><div class="num" id="cd-days">--</div><div class="unit">Days</div></div>
+        <div class="countdown-box"><div class="num" id="cd-hours">--</div><div class="unit">Hours</div></div>
+        <div class="countdown-box"><div class="num" id="cd-mins">--</div><div class="unit">Minutes</div></div>
+        <div class="countdown-box"><div class="num" id="cd-secs">--</div><div class="unit">Seconds</div></div>
+    </div>
+
+    <div class="countdown-date">Launching <strong>May 29, 2026</strong> at <strong>6:00 PM PST</strong></div>
+
+    <!-- shown after launch -->
+    <div class="launched-msg">Season 1 Is Live!</div>
+    <div class="launched-sub">Join now &mdash; <strong>gcore.minehut.gg</strong></div>
+</section>
+
+<!-- PATCH NOTES -->
+<section class="patch-section">
+    <div class="patch-header">
+        <div class="patch-version">Season 1</div>
+        <div class="patch-tag">From Beta</div>
+        <div class="patch-date">May 29, 2026</div>
+    </div>
+
+    <div class="patch-empty" id="patch-placeholder">
+        <div class="icon">&#128220;</div>
+        <p>Patch notes will be revealed at launch.</p>
+    </div>
+
+    <!-- PATCH NOTES GO HERE — uncomment and fill when ready
+    <div class="patch-category" id="patch-content" style="display:none">
+        <h3><span class="icon">&#9889;</span> New Features</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> Example patch note here</li>
+        </ul>
+    </div>
+    -->
+</section>
+
+<script>
+// Target: May 29, 2026 at 6:00 PM PST (UTC-8) = May 30, 2026 02:00:00 UTC
+const TARGET = new Date('2026-05-30T02:00:00Z').getTime();
+
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function tick(){
+    const now = Date.now();
+    const diff = TARGET - now;
+
+    if(diff <= 0){
+        document.body.classList.add('is-launched');
+        document.getElementById('cd-days').textContent = '00';
+        document.getElementById('cd-hours').textContent = '00';
+        document.getElementById('cd-mins').textContent = '00';
+        document.getElementById('cd-secs').textContent = '00';
+        return;
+    }
+
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+
+    document.getElementById('cd-days').textContent = pad(d);
+    document.getElementById('cd-hours').textContent = pad(h);
+    document.getElementById('cd-mins').textContent = pad(m);
+    document.getElementById('cd-secs').textContent = pad(s);
+
+    requestAnimationFrame(()=> setTimeout(tick, 250));
+}
+
+tick();
+</script>
+</body>
+</html>
