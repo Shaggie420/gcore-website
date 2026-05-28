@@ -313,16 +313,37 @@
             border-radius: 16px;
             overflow: hidden;
             aspect-ratio: 16/10;
-            background: linear-gradient(135deg, var(--bg-card), rgba(164,99,214,0.1));
+            background: var(--bg-card);
             border: 1px solid var(--border-subtle);
+        }
+        .about-image img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+        .about-image img.active { opacity: 1; }
+        .slide-dots {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            align-items: center;
-            justify-content: center;
+            gap: 8px;
+            z-index: 2;
         }
-        .about-image .placeholder-art {
-            font-size: 4rem;
-            opacity: 0.4;
+        .slide-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: background 0.3s;
         }
+        .slide-dots span.active { background: var(--purple-light); }
 
         /* ========== FEATURES CARDS ========== */
         .features-grid {
@@ -565,8 +586,13 @@
                 <p>GCore is a generator tycoon experience built from the ground up. Place generators on your plot, collect resources, sell them for profit, and upgrade your way to the top of the leaderboards.</p>
                 <p>With a full prestige system, custom pets, private mines, farming, fishing, PvP arenas, and hundreds of generators to unlock &mdash; there's always something to grind for.</p>
             </div>
-            <div class="about-image reveal">
-                <div class="placeholder-art">&#9878;</div>
+            <div class="about-image reveal" id="slideshow">
+                <img src="farm.png" alt="GCore Farming Area" class="active">
+                <img src="parkour.png" alt="GCore Parkour">
+                <div class="slide-dots">
+                    <span class="active" onclick="goSlide(0)"></span>
+                    <span onclick="goSlide(1)"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -713,6 +739,19 @@
         });
     }, { threshold: 0.15 });
     reveals.forEach(el => observer.observe(el));
+
+    // Image slideshow
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('#slideshow img');
+    const dots = document.querySelectorAll('.slide-dots span');
+    function goSlide(i) {
+        slides[currentSlide].classList.remove('active');
+        dots[currentSlide].classList.remove('active');
+        currentSlide = i;
+        slides[currentSlide].classList.add('active');
+        dots[currentSlide].classList.add('active');
+    }
+    setInterval(() => { goSlide((currentSlide + 1) % slides.length); }, 4000);
 </script>
 
 </body>
