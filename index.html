@@ -527,7 +527,7 @@
         <div class="nav-links">
             <a href="#about">About</a>
             <a href="#features">Features</a>
-            <a href="https://gcoreminecraft.tebex.io/category/gcore-ranks" target="_blank">Store</a>
+            <a href="#store">Store</a>
             <a href="https://discord.gg/eFsTzsMhBz" target="_blank" class="btn-nav">Discord</a>
         </div>
     </div>
@@ -587,11 +587,21 @@
                 <p>With a full prestige system, custom pets, private mines, farming, fishing, PvP arenas, and hundreds of generators to unlock &mdash; there's always something to grind for.</p>
             </div>
             <div class="about-image reveal" id="slideshow">
-                <img src="farm.png" alt="GCore Farming Area" class="active">
+                <img src="spawn.png" alt="GCore Spawn Area" class="active">
+                <img src="farm.png" alt="GCore Farming Area">
+                <img src="fishing.png" alt="GCore Fishing Pond">
+                <img src="beekeeper.png" alt="GCore Bee Keeper Event">
+                <img src="mine.png" alt="GCore Private Mine">
+                <img src="generators.png" alt="GCore Generator Plot">
                 <img src="parkour.png" alt="GCore Parkour">
                 <div class="slide-dots">
                     <span class="active" onclick="goSlide(0)"></span>
                     <span onclick="goSlide(1)"></span>
+                    <span onclick="goSlide(2)"></span>
+                    <span onclick="goSlide(3)"></span>
+                    <span onclick="goSlide(4)"></span>
+                    <span onclick="goSlide(5)"></span>
+                    <span onclick="goSlide(6)"></span>
                 </div>
             </div>
         </div>
@@ -610,33 +620,33 @@
         <div class="features-grid">
             <div class="feature-card reveal">
                 <div class="feature-icon fi-purple">&#9881;</div>
-                <h3>30+ Generator Tiers</h3>
-                <p>From Carbon to Genesis, upgrade through 30 money generators and 30 token forges. Unlock special event generators along the way.</p>
+                <h3>60 Generator Tiers</h3>
+                <p>Upgrade through 30 money generators and 30 token forges. Each tier drops more resources, and upgrading is the core path to building your empire.</p>
             </div>
             <div class="feature-card reveal">
                 <div class="feature-icon fi-gold">&#9733;</div>
-                <h3>Prestige & Ascend</h3>
-                <p>Reset your level for permanent multipliers, gen slots, prestige points, and rare rewards. Chase the jackpot pity system for huge bonuses.</p>
+                <h3>Gen Pilers</h3>
+                <p>Stack multiple generators into a single block with a massive multiplier boost. Piler tiers range from Common to Divine, earned from events, crates, and the credit shop.</p>
             </div>
             <div class="feature-card reveal">
                 <div class="feature-icon fi-green">&#128062;</div>
                 <h3>Tycoon Pets</h3>
-                <p>Hatch eggs, discover 28 unique pets from Common to Mythic rarity. Each pet has passive drips and powerful tycoon abilities.</p>
+                <p>Hatch eggs and discover 28 unique pets from Common to Mythic rarity. Each pet provides passive resource drips and tycoon abilities to boost your grind.</p>
             </div>
             <div class="feature-card reveal">
                 <div class="feature-icon fi-blue">&#9935;</div>
-                <h3>Private Mines</h3>
-                <p>Mine blocks in your personal mine with custom enchantments. Upgrade your pickaxe with Efficiency, Fortune, Token Finder, and more.</p>
+                <h3>Prestige & Quests</h3>
+                <p>Prestige to earn permanent multipliers, bonus gen slots, and prestige points. Complete daily quests and mastery challenges for extra rewards.</p>
             </div>
             <div class="feature-card reveal">
                 <div class="feature-icon fi-cyan">&#127793;</div>
-                <h3>Farming & Fishing</h3>
-                <p>Grow 68 crops that unlock with prestige. Level your Harvester tool with enchantments. Cast lines for rare fish and legendary loot.</p>
+                <h3>Farming, Fishing & Mines</h3>
+                <p>Grow 68 crops, upgrade your Harvester tool, and fish at the pond with upgradeable rods. Mine in your own private tiered mine with custom pickaxe enchantments.</p>
             </div>
             <div class="feature-card reveal">
-                <div class="feature-icon fi-red">&#9876;</div>
-                <h3>PvP & Events</h3>
-                <p>Battle in the arena with custom kits. Catch fairies during spring events. Compete in seasonal challenges for exclusive tags and rewards.</p>
+                <div class="feature-icon fi-red">&#11088;</div>
+                <h3>Reputation</h3>
+                <p>Spend eco to earn Rep in a weekly competition. Top 10 players win Credits every Saturday, and 1st place takes home real cash prizes alongside their Credits.</p>
             </div>
         </div>
     </div>
@@ -647,7 +657,7 @@
     <div class="container">
         <div class="stats-bar reveal">
             <div class="stat-item">
-                <div class="stat-value">30+</div>
+                <div class="stat-value">60</div>
                 <div class="stat-label">Generator Tiers</div>
             </div>
             <div class="stat-item">
@@ -659,13 +669,47 @@
                 <div class="stat-label">Farmable Crops</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">580+</div>
-                <div class="stat-label">Prestige Levels</div>
+                <div class="stat-value">5</div>
+                <div class="stat-label">Piler Tiers</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">13</div>
-                <div class="stat-label">Mutations</div>
+                <div class="stat-value">$10</div>
+                <div class="stat-label">Weekly Cash Prize</div>
             </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== CREDITS STORE ========== -->
+<section id="store">
+    <div class="container">
+        <div class="reveal" style="text-align:center;">
+            <div class="section-label">Credit Shop</div>
+            <div class="section-title">Power Up with Credits</div>
+            <p class="section-desc" style="margin:0 auto;">Credits are GCore's premium currency. Unlock gameplay perks, piler packs, and exclusive bundles from the in-game <strong>/buy</strong> store.</p>
+        </div>
+        <div class="features-grid" style="margin-top:40px;">
+            <div class="feature-card reveal">
+                <div class="feature-icon fi-gold">&#128176;</div>
+                <h3>Convenience Perks</h3>
+                <p>Unlock /fly, /heal, /nick, Pickup-All generators, and Upgrade-All generators. Skip the grind for rank-locked perks and get them instantly.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon fi-purple">&#128230;</div>
+                <h3>Piler Packs & Bundles</h3>
+                <p>Grab the Piler Starter Pack with Common and Rare pilers, or go big with the Generator Tycoon bundle for gen slots, relics, keys, and a Legendary Piler.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon fi-green">&#127775;</div>
+                <h3>Earn Credits Free</h3>
+                <p>Don't want to spend? Compete in the weekly Reputation leaderboard. Top 10 players earn Credits every Saturday just by playing the game.</p>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:36px;">
+            <a href="https://gcoreminecraft.tebex.io/category/gcore-ranks" target="_blank" class="btn-discord" style="background:var(--purple-main);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                Visit the Store
+            </a>
         </div>
     </div>
 </section>
