@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCore - Tutorials & Wiki</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--purple:#a463d6;--purple-l:#cd8cff;--purple-d:#7b3fad;--text:#f0f0f5;--text2:#8a8a9a;--text3:#5a5a6a;--border:rgba(255,255,255,0.06);--gold:#ffd700}
+        html{scroll-behavior:smooth}
+        body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+
+        /* BG */
+        .bg-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(164,99,214,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(164,99,214,0.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+
+        /* NAV */
+        header{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 24px}
+        .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px}
+        .logo{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,var(--purple-l),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
+        .nav-links{display:flex;gap:24px;align-items:center}
+        .nav-links a{color:var(--text2);text-decoration:none;font-size:.85rem;font-weight:500;transition:color .2s}
+        .nav-links a:hover{color:var(--text)}
+
+        /* LAYOUT */
+        .page{display:flex;max-width:1200px;margin:0 auto;padding:76px 24px 40px;position:relative;z-index:1;gap:28px;min-height:100vh}
+
+        /* SIDEBAR */
+        .sidebar{width:230px;flex-shrink:0;position:sticky;top:76px;max-height:calc(100vh - 92px);overflow-y:auto;padding-right:12px}
+        .sidebar::-webkit-scrollbar{width:4px}
+        .sidebar::-webkit-scrollbar-thumb{background:var(--purple);border-radius:4px}
+        .sidebar h3{font-family:'Space Grotesk',sans-serif;font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--purple-l);margin:20px 0 8px;padding-left:12px}
+        .sidebar h3:first-child{margin-top:0}
+        .sidebar a{display:block;padding:6px 12px;font-size:.82rem;color:var(--text2);text-decoration:none;border-radius:6px;transition:background .15s,color .15s;border-left:2px solid transparent}
+        .sidebar a:hover,.sidebar a.active{background:rgba(164,99,214,0.08);color:var(--text);border-left-color:var(--purple)}
+
+        /* MAIN */
+        .content{flex:1;min-width:0}
+
+        /* SEARCH */
+        .search-box{position:relative;margin-bottom:28px}
+        .search-box input{width:100%;padding:14px 20px 14px 48px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:.95rem;outline:none;transition:border-color .2s}
+        .search-box input:focus{border-color:rgba(164,99,214,0.4)}
+        .search-box input::placeholder{color:var(--text3)}
+        .search-box svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text3)}
+
+        /* SECTIONS */
+        .wiki-section{margin-bottom:48px;scroll-margin-top:80px}
+        .wiki-section h2{font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+        .wiki-section h2 .emoji{font-size:1.3rem}
+        .wiki-section .importance{display:inline-block;padding:2px 10px;border-radius:100px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+        .imp-core{background:rgba(255,59,59,0.15);color:#ff6b6b}
+        .imp-high{background:rgba(255,165,0,0.15);color:#ffaa44}
+        .imp-med{background:rgba(74,222,128,0.15);color:#4ade80}
+        .imp-low{background:rgba(96,165,250,0.15);color:#60a5fa}
+        .wiki-section .desc{color:var(--text2);font-size:.95rem;margin-bottom:16px;max-width:700px}
+        .wiki-section h3{font-size:1rem;font-weight:700;margin:20px 0 8px;color:var(--purple-l)}
+
+        /* TABLES */
+        .info-table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:.85rem}
+        .info-table th{text-align:left;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);color:var(--purple-l);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:1px}
+        .info-table td{padding:10px 14px;border:1px solid var(--border);color:var(--text2)}
+        .info-table tr:hover td{background:rgba(164,99,214,0.03)}
+
+        /* CARDS */
+        .info-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin:12px 0}
+        .info-card h4{font-size:.9rem;font-weight:700;margin-bottom:6px}
+        .info-card p{color:var(--text2);font-size:.85rem}
+
+        /* CMD */
+        .cmd{display:inline-block;background:rgba(164,99,214,0.12);color:var(--purple-l);padding:2px 8px;border-radius:4px;font-family:monospace;font-size:.82rem;font-weight:600}
+
+        /* TIPS */
+        .tip{background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:10px;padding:14px 18px;margin:12px 0;font-size:.85rem;color:#a8e6cf}
+        .tip::before{content:'TIP: ';font-weight:700;color:#4ade80}
+        .warn{background:rgba(255,165,0,0.06);border:1px solid rgba(255,165,0,0.15);border-radius:10px;padding:14px 18px;margin:12px 0;font-size:.85rem;color:#ffd699}
+        .warn::before{content:'NOTE: ';font-weight:700;color:#ffaa44}
+
+        /* HIDDEN WHEN SEARCH FILTERS */
+        .wiki-section.hidden{display:none}
+
+        /* MOBILE */
+        @media(max-width:768px){
+            .sidebar{display:none}
+            .page{padding-top:76px}
+        }
+    </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<header>
+    <div class="nav-inner">
+        <a href="index.html" class="logo">GCORE</a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="tutorials.html" style="color:var(--text)">Tutorials</a>
+            <a href="https://discord.gg/eFsTzsMhBz" target="_blank">Discord</a>
+            <a href="https://gcoreminecraft.tebex.io/category/gcore-ranks" target="_blank">Store</a>
+        </div>
+    </div>
+</header>
+
+<div class="page">
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+    <h3>Getting Started</h3>
+    <a href="#overview">Server Overview</a>
+    <a href="#commands">All Commands</a>
+    <a href="#currencies">Currencies</a>
+    <h3>Core Systems</h3>
+    <a href="#generators">Generators</a>
+    <a href="#pilers">Gen Pilers</a>
+    <a href="#prestige">Prestige</a>
+    <a href="#rebirth">Rebirth</a>
+    <h3>Activities</h3>
+    <a href="#farming">Farming</a>
+    <a href="#fishing">Fishing</a>
+    <a href="#pmines">Private Mines</a>
+    <a href="#pets">Pets</a>
+    <h3>Competition</h3>
+    <a href="#reputation">Reputation</a>
+    <a href="#pvp">PvP / FFA</a>
+    <a href="#trading">Trading</a>
+    <a href="#quests">Quests</a>
+    <h3>Rewards</h3>
+    <a href="#crates">Crates & Keys</a>
+    <a href="#credits">Credits & Store</a>
+    <a href="#events">Events</a>
+    <a href="#tags">Tags</a>
+</nav>
+
+<!-- CONTENT -->
+<main class="content">
+
+<div class="search-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="search" placeholder="Search for any feature, item, command..." oninput="filterSections()">
+</div>
+
+<!-- ============ OVERVIEW ============ -->
+<section class="wiki-section" id="overview">
+    <h2><span class="emoji">&#127759;</span> Server Overview</h2>
+    <span class="importance imp-core">Essential</span>
+    <p class="desc">GCore is a generator tycoon server on Minehut. Place generators on your plot, sell resources, prestige, and compete to become the richest player on the server.</p>
+    <h3>How to Join</h3>
+    <p class="desc">Java Edition 1.21+ &mdash; connect to <span class="cmd">gcore.minehut.gg</span></p>
+    <h3>First Steps</h3>
+    <div class="info-card">
+        <h4>1. Run /help</h4>
+        <p>The 10-step interactive guide walks you through every feature and gives you free crate keys as rewards for each step completed.</p>
+    </div>
+    <div class="info-card">
+        <h4>2. Visit your Plot</h4>
+        <p>Type <span class="cmd">/p h</span> to go to your plot. This is where you place generators.</p>
+    </div>
+    <div class="info-card">
+        <h4>3. Buy Generators</h4>
+        <p>Open <span class="cmd">/shop</span> to buy your first generators. Place them on your plot and they auto-drop resources that sell on pickup.</p>
+    </div>
+    <div class="tip">Complete all 10 steps of /help to earn a Genesis Key &mdash; the rarest key type in the game.</div>
+</section>
+
+<!-- ============ COMMANDS ============ -->
+<section class="wiki-section" id="commands">
+    <h2><span class="emoji">&#9000;</span> All Commands</h2>
+    <span class="importance imp-high">Important</span>
+    <table class="info-table">
+        <tr><th>Command</th><th>What it Does</th></tr>
+        <tr><td><span class="cmd">/help</span></td><td>Interactive 10-step guide with free key rewards</td></tr>
+        <tr><td><span class="cmd">/shop</span></td><td>Buy generators and items with eco</td></tr>
+        <tr><td><span class="cmd">/p h</span></td><td>Teleport to your plot (generator placement)</td></tr>
+        <tr><td><span class="cmd">/prestige</span></td><td>Prestige menu &mdash; ascend for permanent boosts</td></tr>
+        <tr><td><span class="cmd">/rebirth</span></td><td>Rebirth menu &mdash; ultimate ascension with jackpots</td></tr>
+        <tr><td><span class="cmd">/index</span></td><td>Browse all generators, crops, pets, and mutations</td></tr>
+        <tr><td><span class="cmd">/farm</span></td><td>Teleport to the farming area</td></tr>
+        <tr><td><span class="cmd">/fish</span></td><td>Teleport to the fishing pond</td></tr>
+        <tr><td><span class="cmd">/pmine</span></td><td>Teleport to your private mine</td></tr>
+        <tr><td><span class="cmd">/bp</span></td><td>Pet backpack &mdash; manage and equip pets</td></tr>
+        <tr><td><span class="cmd">/rep</span></td><td>Reputation &mdash; weekly leaderboard competition</td></tr>
+        <tr><td><span class="cmd">/rep buy &lt;amount&gt;</span></td><td>Buy reputation points ($100K eco per point)</td></tr>
+        <tr><td><span class="cmd">/rep top</span></td><td>View the weekly reputation leaderboard</td></tr>
+        <tr><td><span class="cmd">/buy</span></td><td>Credit shop &mdash; spend credits on perks and pilers</td></tr>
+        <tr><td><span class="cmd">/trade &lt;player&gt;</span></td><td>Open a secure trade with another player</td></tr>
+        <tr><td><span class="cmd">/ffa</span></td><td>Enter the PvP free-for-all arena</td></tr>
+        <tr><td><span class="cmd">/event</span></td><td>Go to the current seasonal event area</td></tr>
+        <tr><td><span class="cmd">/ctf</span></td><td>Join Capture the Flag</td></tr>
+        <tr><td><span class="cmd">/duels</span></td><td>Challenge another player to a duel</td></tr>
+        <tr><td><span class="cmd">/crates</span></td><td>View and use your crate keys</td></tr>
+        <tr><td><span class="cmd">/ecoshop</span></td><td>Token exchange &mdash; buy items with tokens</td></tr>
+    </table>
+</section>
+
+<!-- ============ CURRENCIES ============ -->
+<section class="wiki-section" id="currencies">
+    <h2><span class="emoji">&#128176;</span> Currencies</h2>
+    <span class="importance imp-core">Essential</span>
+    <p class="desc">GCore has multiple currencies, each earned and spent in different ways.</p>
+    <table class="info-table">
+        <tr><th>Currency</th><th>How to Earn</th><th>What it Buys</th></tr>
+        <tr><td><strong>Money (Eco)</strong></td><td>Generator drops, mining, fishing, farming</td><td>Generators, reputation, basic items</td></tr>
+        <tr><td><strong>Tokens</strong></td><td>Token forges, mining (Token Finder), quests</td><td>Token shop items, reputation exchange</td></tr>
+        <tr><td><strong>Crystals</strong></td><td>Mining (Crystalizer enchant), quests</td><td>Special upgrades</td></tr>
+        <tr><td><strong>Essence</strong></td><td>Mining (Onyx Magnet enchant)</td><td>Mine upgrades</td></tr>
+        <tr><td><strong>Reputation</strong></td><td>Bought with eco ($100K per point)</td><td>Weekly competition for credits + cash</td></tr>
+        <tr><td><strong>Credits</strong></td><td>Tebex store (real money) or Rep prizes</td><td>Perks, pilers, bundles in /buy</td></tr>
+        <tr><td><strong>Prestige Points</strong></td><td>Earned on each prestige</td><td>Prestige shop rewards</td></tr>
+        <tr><td><strong>Rebirth Points</strong></td><td>Earned on each rebirth</td><td>Rebirth skill tree</td></tr>
+    </table>
+</section>
+
+<!-- ============ GENERATORS ============ -->
+<section class="wiki-section" id="generators">
+    <h2><span class="emoji">&#9881;</span> Generators</h2>
+    <span class="importance imp-core">Essential</span>
+    <p class="desc">Generators are the core of GCore. Place them on your plot and they periodically drop items that auto-sell when you walk over them. There are 30 money generators and 30 token forges (60 total tiers).</p>
+    <h3>How They Work</h3>
+    <div class="info-card">
+        <h4>Placing &amp; Collecting</h4>
+        <p>Buy generators from <span class="cmd">/shop</span>, place them on your plot (<span class="cmd">/p h</span>). Generator drops auto-sell on pickup. You can also use sellwands to sell items stored in chests.</p>
+    </div>
+    <h3>Money Generators vs Token Forges</h3>
+    <p class="desc">Money generators produce eco (your main currency). Token forges produce tokens (secondary currency used in the token shop). Both have 30 tiers each. View all tiers and their stats in <span class="cmd">/index</span>.</p>
+    <h3>Upgrading</h3>
+    <p class="desc">Higher tier generators cost more but produce significantly more per drop. Money gen upgrades cost eco, token forge upgrades cost tokens. Upgrade through the <span class="cmd">/index</span> menu.</p>
+    <h3>Gen Slots</h3>
+    <p class="desc">You have a limited number of gen slots. Earn more slots through prestige, rebirth, quests, and the credit shop. Pilers let you stack multiple generators into one slot.</p>
+    <div class="tip">Gen drops auto-sell on pickup! Just walk over them. Use sellwands to bulk-sell items in chests.</div>
+</section>
+
+<!-- ============ PILERS ============ -->
+<section class="wiki-section" id="pilers">
+    <h2><span class="emoji">&#128230;</span> Gen Pilers</h2>
+    <span class="importance imp-high">Important</span>
+    <p class="desc">Gen Pilers let you stack multiple generators into a single block. The stacked generators all produce together with a multiplier bonus based on the piler tier. This is one of the most powerful progression tools in the game.</p>
+    <h3>How Pilers Work</h3>
+    <p class="desc">A piler has a capacity (how many gens it holds) and a multiplier (bonus applied to all gens inside). Higher tier pilers hold more gens and give bigger multiplier boosts. Piled generators still count toward your gen slot limit &mdash; this is intentional design.</p>
+    <h3>All 8 Piler Tiers</h3>
+    <table class="info-table">
+        <tr><th>Tier</th><th>Capacity</th><th>Multiplier</th><th>Credit Cost</th></tr>
+        <tr><td>Common</td><td>5 gens</td><td>1.15x</td><td>250</td></tr>
+        <tr><td>Rare</td><td>10 gens</td><td>1.2x</td><td>1,000</td></tr>
+        <tr><td>Legendary</td><td>15 gens</td><td>1.25x</td><td>2,500</td></tr>
+        <tr><td>Mythic</td><td>25 gens</td><td>1.35x</td><td>5,000</td></tr>
+        <tr><td>Divine</td><td>50 gens</td><td>1.5x</td><td>8,000</td></tr>
+        <tr><td>Celestial</td><td>100 gens</td><td>2.0x</td><td>12,000</td></tr>
+        <tr><td>Omega</td><td>150 gens</td><td>3.0x</td><td>18,000</td></tr>
+        <tr><td>Admin</td><td>150 gens</td><td>4.0x</td><td>25,000</td></tr>
+    </table>
+    <h3>How to Get Pilers</h3>
+    <p class="desc">Buy them with credits in <span class="cmd">/buy</span>, earn them from event shops (Bee Keeper, Para Tree), or find them in Ultra Boxes and Premium Core crate boxes.</p>
+    <div class="tip">The Piler Starter Pack in /buy gives 3x Common + 2x Rare pilers for just 1,000 credits &mdash; great value for new players.</div>
+</section>
+
+<!-- ============ PRESTIGE ============ -->
+<section class="wiki-section" id="prestige">
+    <h2><span class="emoji">&#11088;</span> Prestige</h2>
+    <span class="importance imp-core">Essential</span>
+    <p class="desc">Prestige is how you permanently progress. Once you reach the required level, you can prestige to gain permanent bonuses. Command: <span class="cmd">/prestige</span></p>
+    <h3>Requirements</h3>
+    <p class="desc">Each prestige costs a certain number of levels. The formula is: <strong>10 + (current prestige &times; 5)</strong> levels. So Prestige 0&rarr;1 costs Level 10, Prestige 1&rarr;2 costs Level 15, Prestige 5&rarr;6 costs Level 35, and so on.</p>
+    <h3>Rewards Per Prestige</h3>
+    <table class="info-table">
+        <tr><th>Prestige Range</th><th>Multiplier Gain</th><th>Gen Slots</th><th>Prestige Points</th></tr>
+        <tr><td>1 &ndash; 4</td><td>+0.1x</td><td>+3</td><td>+1</td></tr>
+        <tr><td>5 &ndash; 49</td><td>+0.05x</td><td>+3</td><td>+1</td></tr>
+        <tr><td>50+</td><td>+0.01x</td><td>+3</td><td>+1</td></tr>
+    </table>
+    <div class="tip">Prestige early and often. The gen slots alone make each prestige worth it, and the multiplier compounds over time.</div>
+</section>
+
+<!-- ============ REBIRTH ============ -->
+<section class="wiki-section" id="rebirth">
+    <h2><span class="emoji">&#128142;</span> Rebirth</h2>
+    <span class="importance imp-high">Important</span>
+    <p class="desc">Rebirth is the ultimate ascension beyond prestige. It gives massive rewards including gen slots, relics, and a pity-based jackpot system. Commands: <span class="cmd">/rebirth</span>, <span class="cmd">/skills</span></p>
+    <h3>Jackpot Pity System</h3>
+    <p class="desc">Every rebirth rolls a random reward. If you go 10 rebirths without hitting the jackpot, the pity system guarantees it on your next rebirth. Rewards range from +5 gen slots (common) to god-tier relics and genesis keys.</p>
+    <h3>Reward Tiers</h3>
+    <table class="info-table">
+        <tr><th>Roll Range</th><th>Reward</th></tr>
+        <tr><td>Common (45%)</td><td>+5 Gen Slots</td></tr>
+        <tr><td>Uncommon (25%)</td><td>1x Epic Relic</td></tr>
+        <tr><td>Rare (13%)</td><td>1x Legendary Relic</td></tr>
+        <tr><td>Epic (9%)</td><td>1x Mythic Relic</td></tr>
+        <tr><td>Legendary (5%)</td><td>Jackpot tier rewards</td></tr>
+    </table>
+    <h3>Rebirth Skill Tree</h3>
+    <p class="desc">Rebirth Points earned from each rebirth can be spent in the skill tree for permanent upgrades.</p>
+</section>
+
+<!-- ============ FARMING ============ -->
+<section class="wiki-section" id="farming">
+    <h2><span class="emoji">&#127793;</span> Farming</h2>
+    <span class="importance imp-high">Important</span>
+    <p class="desc">Farming is one of the fastest ways to gain XP and level up. Travel to the farm with <span class="cmd">/farm</span> and harvest crops using your Harvester tool.</p>
+    <h3>How it Works</h3>
+    <p class="desc">There are 68 different crops in the game. New crops unlock as you prestige. You harvest them by left-clicking with your Harvester tool in the farming area. Each crop gives XP and eco.</p>
+    <h3>The Harvester</h3>
+    <p class="desc">Your Harvester is a special tool that levels up as you use it. Higher levels increase your harvest speed and rewards. You can upgrade it faster through the farm shop.</p>
+    <h3>Farmer Dan</h3>
+    <p class="desc">Talk to Farmer Dan at the farm for information, upgrades, and special purchases. He is your main NPC for all farming-related content.</p>
+    <div class="tip">Farming is the fastest way to gain levels for your next prestige. Always farm between prestiges to level up quickly.</div>
+</section>
+
+<!-- ============ FISHING ============ -->
+<section class="wiki-section" id="fishing">
+    <h2><span class="emoji">&#127907;</span> Fishing</h2>
+    <span class="importance imp-med">Moderate</span>
+    <p class="desc">Fish at the pond (<span class="cmd">/fish</span>) with your Artifact Rod. Catch fish for cash, XP, and rare species. Talk to Fisherman Dan to get started.</p>
+    <h3>Artifact Rod</h3>
+    <p class="desc">Your fishing rod is upgradeable with 9 tiers and 5 skills. It levels up by collecting Souls from fishing.</p>
+    <table class="info-table">
+        <tr><th>Rod Tier</th><th>Color</th></tr>
+        <tr><td>1. Common</td><td>White</td></tr>
+        <tr><td>2. Uncommon</td><td>Green</td></tr>
+        <tr><td>3. Rare</td><td>Blue</td></tr>
+        <tr><td>4. Epic</td><td>Purple</td></tr>
+        <tr><td>5. Legendary</td><td>Gold</td></tr>
+        <tr><td>6. Mythic</td><td>Pink</td></tr>
+        <tr><td>7. Divine</td><td>Cyan</td></tr>
+        <tr><td>8. Celestial</td><td>Yellow</td></tr>
+        <tr><td>9. Genesis</td><td>Purple gradient</td></tr>
+    </table>
+    <h3>Rod Skills</h3>
+    <table class="info-table">
+        <tr><th>Skill</th><th>Effect</th></tr>
+        <tr><td>Luck</td><td>Increases chance for rarer fish</td></tr>
+        <tr><td>Speed</td><td>Reduces catch time</td></tr>
+        <tr><td>Mutation Catalyst</td><td>Chance to upgrade a caught fish by 1 tier</td></tr>
+        <tr><td>Twin Catch</td><td>Chance to catch two fish at once</td></tr>
+        <tr><td>Prismatic</td><td>Bonus effect on catches</td></tr>
+    </table>
+    <div class="tip">The Fishing Pond has its own leaderboard. Top anglers get bragging rights on a live hologram display!</div>
+</section>
+
+<!-- ============ PRIVATE MINES ============ -->
+<section class="wiki-section" id="pmines">
+    <h2><span class="emoji">&#9935;</span> Private Mines</h2>
+    <span class="importance imp-high">Important</span>
+    <p class="desc">Your private mine is a personal mining area where you break blocks for eco, tokens, and rare finds. Access it with <span class="cmd">/pmine</span>. Talk to Forger Dan for pickaxe upgrades.</p>
+    <h3>Mine Tiers</h3>
+    <p class="desc">Your mine can be upgraded through tiers, unlocking better ores and bigger mining areas. Each tier resets the mine with new block compositions.</p>
+    <h3>Pickaxe Enchantments</h3>
+    <p class="desc">Your pickaxe has 3 tabs of enchantments. Shift-click with your pickaxe to open the enchant menu. Enchantments cost Essence (mined from blocks) to upgrade.</p>
+    <h3>Destruction Enchants (35+)</h3>
+    <p class="desc">These break blocks in different patterns. Examples include:</p>
+    <table class="info-table">
+        <tr><th>Enchant</th><th>Effect</th></tr>
+        <tr><td>Jackhammer</td><td>Destroy an entire layer</td></tr>
+        <tr><td>Explosive</td><td>Explode a 6x6x6 section</td></tr>
+        <tr><td>Nuke</td><td>Overwhelming expanding explosion (rarest)</td></tr>
+        <tr><td>Obliteration</td><td>Catastrophic 30x30x30 wipe</td></tr>
+        <tr><td>Quasar</td><td>Massive 14x14x14 cosmic blast</td></tr>
+        <tr><td>Miner Drone</td><td>Spawns a speed-mining drone</td></tr>
+        <tr><td>Tsunami</td><td>Washes away a wide flat area</td></tr>
+        <tr><td>Orbital Strike</td><td>Massive vertical laser beam</td></tr>
+    </table>
+    <h3>Wealth Enchants (33+)</h3>
+    <p class="desc">These find valuable items inside blocks:</p>
+    <table class="info-table">
+        <tr><th>Enchant</th><th>What it Finds</th></tr>
+        <tr><td>Luck</td><td>Massive token drops</td></tr>
+        <tr><td>Keyfinder</td><td>Crate keys hidden in blocks</td></tr>
+        <tr><td>Egg Finder</td><td>Pet eggs</td></tr>
+        <tr><td>Relic Hunter</td><td>Ancient relics with rare loot</td></tr>
+        <tr><td>Genesis Drop</td><td>God-tier Genesis Keys</td></tr>
+        <tr><td>Jackpot</td><td>Massive injection of all currencies</td></tr>
+        <tr><td>Shard Finder</td><td>Rebirth Shards</td></tr>
+    </table>
+    <h3>Passive Enchants</h3>
+    <p class="desc">Always-active buffs: Haste, Speed, Jump Boost, Night Vision, Fortune, Greed (sell multiplier), Token Booster, Crystal Booster. All scale to level 100.</p>
+    <div class="warn">Ore prices are balanced so mining supplements generators but doesn't replace them. Generators are always your primary income source.</div>
+</section>
+
+<!-- ============ PETS ============ -->
+<section class="wiki-section" id="pets">
+    <h2><span class="emoji">&#128062;</span> Pets</h2>
+    <span class="importance imp-med">Moderate</span>
+    <p class="desc">Hatch eggs on your plot, and they become pets that orbit around you with passive abilities. Manage pets with <span class="cmd">/bp</span>.</p>
+    <h3>Egg Types &amp; Hatch Times</h3>
+    <table class="info-table">
+        <tr><th>Egg</th><th>Hatch Time</th></tr>
+        <tr><td>Common</td><td>10 Minutes</td></tr>
+        <tr><td>Uncommon</td><td>30 Minutes</td></tr>
+        <tr><td>Rare</td><td>1 Hour</td></tr>
+        <tr><td>Legendary</td><td>3 Hours</td></tr>
+        <tr><td>Mythic</td><td>12 Hours</td></tr>
+        <tr><td>Sun Egg</td><td>10 Minutes</td></tr>
+        <tr><td>Forest Egg</td><td>30 Minutes</td></tr>
+        <tr><td>Night Egg</td><td>1 Hour</td></tr>
+        <tr><td>Rainbow Egg</td><td>30 Seconds</td></tr>
+    </table>
+    <h3>Pet Species (28 Total)</h3>
+    <p class="desc">Each egg hatches into a random species. Known species include: Aura Hound, Farm Pup, Meadow Hopper, Dusk Hopper, Plump Fowl, Barn Cat, Swift Fawn, Ginger Feline, Dotted Fawn, Truffle Swine, Crested Fowl, Vine Macaque, Meadow Bovine, Chrome Macaque, River Otter, Mossback Tortoise, Frost Bear, Ash Rodent, Dirt Rodent, Bramble Squirrel, Crimson Forager, Ember Fox, and more.</p>
+    <h3>Pet Features</h3>
+    <p class="desc">Pets have weight (randomized 0.88&ndash;2.20), can be Huge variants, and have passive abilities. Pets are client-sided (only you can see yours) and orbit around you at head height. They can be traded to other players securely with anti-scam verification.</p>
+    <div class="tip">Place eggs on your plot (/p h) to hatch them. Higher tier eggs take longer but give rarer species with better abilities.</div>
+</section>
+
+<!-- ============ REPUTATION ============ -->
+<section class="wiki-section" id="reputation">
+    <h2><span class="emoji">&#11088;</span> Reputation</h2>
+    <span class="importance imp-high">Important</span>
+    <p class="desc">Reputation is a weekly competition where you spend eco to earn Rep points. Every Saturday at midnight, the Top 10 players receive Credits and the #1 player wins real cash. Command: <span class="cmd">/rep</span></p>
+    <h3>How to Earn Rep</h3>
+    <p class="desc">Use <span class="cmd">/rep buy &lt;amount&gt;</span> to convert eco into Rep. Each point costs $100,000 eco.</p>
+    <h3>Weekly Prizes</h3>
+    <table class="info-table">
+        <tr><th>Place</th><th>Credits</th><th>Bonus</th></tr>
+        <tr><td><strong>1st</strong></td><td>2,500</td><td>$10 Cashapp or BTC</td></tr>
+        <tr><td><strong>2nd</strong></td><td>1,500</td><td>&mdash;</td></tr>
+        <tr><td><strong>3rd</strong></td><td>1,000</td><td>&mdash;</td></tr>
+        <tr><td>4th</td><td>750</td><td>&mdash;</td></tr>
+        <tr><td>5th</td><td>500</td><td>&mdash;</td></tr>
+        <tr><td>6th</td><td>400</td><td>&mdash;</td></tr>
+        <tr><td>7th</td><td>300</td><td>&mdash;</td></tr>
+        <tr><td>8th</td><td>200</td><td>&mdash;</td></tr>
+        <tr><td>9th</td><td>150</td><td>&mdash;</td></tr>
+        <tr><td>10th</td><td>100</td><td>&mdash;</td></tr>
+    </table>
+    <p class="desc">Use <span class="cmd">/rep top</span> to check the leaderboard and <span class="cmd">/rep history</span> to view past week winners.</p>
+    <div class="tip">Reputation resets every Saturday. This means even new players can compete each week for real prizes!</div>
+</section>
+
+<!-- ============ PVP ============ -->
+<section class="wiki-section" id="pvp">
+    <h2><span class="emoji">&#9876;</span> PvP / FFA</h2>
+    <span class="importance imp-med">Moderate</span>
+    <p class="desc">Enter the Battle world with <span class="cmd">/ffa</span> for free-for-all PvP combat. Gear up in the <span class="cmd">/armory</span> with custom kits.</p>
+    <h3>Combat Tagging</h3>
+    <p class="desc">When you hit or get hit by another player, you are combat tagged for 15 seconds. During this time you cannot use teleport commands (/spawn, /farm, /tpa, etc). An action bar shows your combat timer.</p>
+    <h3>Other PvP Modes</h3>
+    <p class="desc">Besides FFA, there is also <span class="cmd">/ctf</span> (Capture the Flag) and <span class="cmd">/duels</span> (1v1 challenges).</p>
+</section>
+
+<!-- ============ TRADING ============ -->
+<section class="wiki-section" id="trading">
+    <h2><span class="emoji">&#129309;</span> Trading</h2>
+    <span class="importance imp-med">Moderate</span>
+    <p class="desc">Trade safely with other players using <span class="cmd">/trade &lt;player&gt;</span>. The system supports items plus 6 currencies in a single trade.</p>
+    <h3>What You Can Trade</h3>
+    <p class="desc">Items (including pets), Money, Tokens, Crystals, Essence, Points, and Reputation. Both players get a 12-slot item grid plus currency controls.</p>
+    <h3>Anti-Scam Protection</h3>
+    <p class="desc">The trading system has built-in pet verification that detects fake or duplicated pets automatically, replacing them with a warning barrier. Both players must confirm before the trade executes, and balance checks prevent trading currencies you don't have.</p>
+</section>
+
+<!-- ============ QUESTS ============ -->
+<section class="wiki-section" id="quests">
+    <h2><span class="emoji">&#128220;</span> Quests</h2>
+    <span class="importance imp-med">Moderate</span>
+    <p class="desc">GCore has a mastery quest system with 9 categories, each with 50 tiers of progression. Daily quests reset every day.</p>
+    <h3>Mastery Categories</h3>
+    <table class="info-table">
+        <tr><th>Category</th><th>Action</th><th>Example Goal</th></tr>
+        <tr><td>Farming</td><td>Harvest crops</td><td>Harvest 1,500 crops (Tier 1)</td></tr>
+        <tr><td>Fishing</td><td>Catch fish</td><td>Catch 250 fish (Tier 1)</td></tr>
+        <tr><td>Private Mines</td><td>Mine blocks</td><td>Mine 2,000 blocks (Tier 1)</td></tr>
+        <tr><td>Generators</td><td>Sell drops</td><td>Sell generator drops</td></tr>
+        <tr><td>Fairy</td><td>Catch fairies</td><td>Spring event fairies</td></tr>
+        <tr><td>Eggs</td><td>Incubate eggs</td><td>Hatch pet eggs</td></tr>
+        <tr><td>Pets</td><td>Level pets</td><td>Level up your pets</td></tr>
+        <tr><td>FFA</td><td>Kill players</td><td>PvP kills in arena</td></tr>
+        <tr><td>Spring</td><td>Donate items</td><td>Spring event donations</td></tr>
+    </table>
+    <h3>Mastery Rewards</h3>
+    <p class="desc">Every mastery tier gives XP, gen slots (+2 for tiers 1-25, +3 for 26-50), multiplier bonuses (+0.02x for tiers 1-25, +0.01x for 26-50), plus category-specific eco and token rewards.</p>
+</section>
+
+<!-- ============ CRATES ============ -->
+<section class="wiki-section" id="crates">
+    <h2><span class="emoji">&#127873;</span> Crates &amp; Keys</h2>
+    <span class="importance imp-med">Moderate</span>
+    <p class="desc">Crate keys are earned from /help, mining, events, quests, and purchases. Use them at <span class="cmd">/crates</span>.</p>
+    <h3>Key Types (8 Total)</h3>
+    <table class="info-table">
+        <tr><th>Key</th><th>How to Get</th></tr>
+        <tr><td>Farmer</td><td>/help Steps 1-2</td></tr>
+        <tr><td>Egg</td><td>/help Steps 3-4</td></tr>
+        <tr><td>Bee</td><td>/help Step 5, Bee event</td></tr>
+        <tr><td>Easter</td><td>/help Step 6, Spring event</td></tr>
+        <tr><td>Mythic</td><td>/help Step 7, mining (Keyfinder)</td></tr>
+        <tr><td>Legendary</td><td>/help Step 8, rare drops</td></tr>
+        <tr><td>Prestige</td><td>/help Step 9, prestige milestones</td></tr>
+        <tr><td>Genesis</td><td>/help Step 10 (final), mining (Genesis Drop), ultra rare</td></tr>
+    </table>
+    <h3>Special Boxes</h3>
+    <p class="desc"><strong>Ultra Box</strong> and <strong>Premium Core</strong> are special crate boxes that contain high-tier rewards including legendary/mythic/divine pilers, rank rewards, and massive currency payouts.</p>
+</section>
+
+<!-- ============ CREDITS ============ -->
+<section class="wiki-section" id="credits">
+    <h2><span class="emoji">&#128179;</span> Credits &amp; Store</h2>
+    <span class="importance imp-high">Important</span>
+    <p class="desc">Credits are GCore's premium currency used in <span class="cmd">/buy</span>. You can purchase them with real money on the <a href="https://gcoreminecraft.tebex.io/category/gcore-ranks" target="_blank" style="color:var(--purple-l)">Tebex store</a> or earn them free through reputation prizes.</p>
+    <h3>Credit Packages</h3>
+    <table class="info-table">
+        <tr><th>Package</th><th>Price</th><th>Bonus</th></tr>
+        <tr><td>500 Credits</td><td>$5.00</td><td>&mdash;</td></tr>
+        <tr><td>1,050 Credits</td><td>$10.00</td><td>+50 bonus</td></tr>
+        <tr><td>2,200 Credits</td><td>$20.00</td><td>+200 bonus</td></tr>
+        <tr><td>5,750 Credits</td><td>$50.00</td><td>+750 bonus</td></tr>
+        <tr><td>12,000 Credits</td><td>$100.00</td><td>+2,000 bonus</td></tr>
+    </table>
+    <h3>What Credits Buy</h3>
+    <table class="info-table">
+        <tr><th>Item</th><th>Cost</th><th>Description</th></tr>
+        <tr><td>/fly</td><td>1,000</td><td>Flight in all survival worlds</td></tr>
+        <tr><td>/heal</td><td>500</td><td>Instant health restore command</td></tr>
+        <tr><td>/nick</td><td>750</td><td>Change your display name</td></tr>
+        <tr><td>Pickup-All Gens</td><td>750</td><td>Shift-Right-Click to sweep plots</td></tr>
+        <tr><td>Upgrade-All Gens</td><td>750</td><td>Shift-Click GUI upgrading</td></tr>
+        <tr><td>Convenience Bundle</td><td>2,500</td><td>All 5 perks above (save 1,250)</td></tr>
+        <tr><td>Piler Starter Pack</td><td>1,000</td><td>3x Common + 2x Rare pilers</td></tr>
+        <tr><td>Generator Tycoon</td><td>3,500</td><td>+20 slots, relics, keys, Legendary Piler</td></tr>
+    </table>
+    <div class="tip">The Convenience Bundle saves you 1,250 credits compared to buying each perk separately. Best value purchase for new players.</div>
+</section>
+
+<!-- ============ EVENTS ============ -->
+<section class="wiki-section" id="events">
+    <h2><span class="emoji">&#127880;</span> Events</h2>
+    <span class="importance imp-med">Moderate</span>
+    <p class="desc">GCore runs seasonal events with unique currencies, shops, and rewards. Access with <span class="cmd">/event</span>.</p>
+    <h3>Bee Event</h3>
+    <p class="desc">Visit the Bee Keeper NPC to earn pollen-based currencies (Amber, Crimson, Void). Buy Common Gen Pilers (daily limit of 5), and forge the Hive Mind Core for +0.5 permanent multiplier, +5 gen slots, and a Mythic Piler.</p>
+    <h3>Spring Event</h3>
+    <p class="desc">The Para Tree has a level progression system. Level up by completing spring tasks. Rewards include Common Pilers (levels 1-4, 6-9), +1 max gen slot (every 5 levels), and +0.1x multiplier (every 10 levels). Catch fairies for extra loot.</p>
+    <h3>Minigames</h3>
+    <p class="desc">Squid Games, Spleef, and Paintball rotate as event minigames with their own rewards.</p>
+</section>
+
+<!-- ============ TAGS ============ -->
+<section class="wiki-section" id="tags">
+    <h2><span class="emoji">&#127991;</span> Tags</h2>
+    <span class="importance imp-low">Optional</span>
+    <p class="desc">Tags are cosmetic badges that show next to your name in chat and TAB. Unlock them through paid ranks, generator milestones, and achievements. Equip and switch tags from the tag GUI.</p>
+    <p class="desc">Tags are purely cosmetic and do not affect gameplay. They are a way to show off your progress and purchases.</p>
+</section>
+
+</main>
+</div>
+
+<script>
+function filterSections(){
+    const q=document.getElementById('search').value.toLowerCase().trim();
+    document.querySelectorAll('.wiki-section').forEach(s=>{
+        if(!q){s.classList.remove('hidden');return}
+        s.classList.toggle('hidden',!s.textContent.toLowerCase().includes(q));
+    });
+    // Highlight active sidebar link
+    document.querySelectorAll('.sidebar a').forEach(a=>{
+        const id=a.getAttribute('href')?.slice(1);
+        const sec=id&&document.getElementById(id);
+        if(sec)a.style.opacity=sec.classList.contains('hidden')?'0.3':'1';
+    });
+}
+// Sidebar active tracking
+const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+        if(e.isIntersecting){
+            document.querySelectorAll('.sidebar a').forEach(a=>a.classList.remove('active'));
+            const a=document.querySelector(`.sidebar a[href="#${e.target.id}"]`);
+            if(a)a.classList.add('active');
+        }
+    });
+},{threshold:0.2,rootMargin:'-80px 0px -60% 0px'});
+document.querySelectorAll('.wiki-section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
