@@ -603,6 +603,67 @@
             .btn-discord { width: 100%; justify-content: center; }
             .cta-actions { flex-direction: column; width: 100%; }
         }
+        /* ========== FLYING BEES ========== */
+        .bee-layer {
+            position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
+        }
+        .bee {
+            position: absolute;
+            width: 32px; height: 28px;
+            image-rendering: pixelated;
+            opacity: 0.55;
+            filter: drop-shadow(0 0 6px rgba(255,200,50,.25));
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+        }
+        .bee svg { width: 100%; height: 100%; }
+        .bee.flip svg { transform: scaleX(-1); }
+
+        @keyframes flyAcrossR {
+            0%   { transform: translate(-60px, 0) rotate(0deg); }
+            25%  { transform: translate(25vw, -30px) rotate(-3deg); }
+            50%  { transform: translate(50vw, 15px) rotate(2deg); }
+            75%  { transform: translate(75vw, -20px) rotate(-2deg); }
+            100% { transform: translate(calc(100vw + 60px), 10px) rotate(0deg); }
+        }
+        @keyframes flyAcrossL {
+            0%   { transform: translate(calc(100vw + 60px), 0) rotate(0deg); }
+            25%  { transform: translate(75vw, 25px) rotate(3deg); }
+            50%  { transform: translate(50vw, -20px) rotate(-2deg); }
+            75%  { transform: translate(25vw, 15px) rotate(2deg); }
+            100% { transform: translate(-60px, -10px) rotate(0deg); }
+        }
+        @keyframes flyDiag1 {
+            0%   { transform: translate(-60px, -40px); }
+            50%  { transform: translate(50vw, 30px); }
+            100% { transform: translate(calc(100vw + 60px), -20px); }
+        }
+        @keyframes flyDiag2 {
+            0%   { transform: translate(calc(100vw + 60px), -30px); }
+            50%  { transform: translate(50vw, 25px); }
+            100% { transform: translate(-60px, -15px); }
+        }
+        @keyframes bob {
+            0%, 100% { margin-top: 0; }
+            50% { margin-top: -8px; }
+        }
+        @keyframes wingBuzz {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        /* ========== MUSIC TOGGLE ========== */
+        .music-toggle {
+            position: fixed; bottom: 20px; right: 20px; z-index: 500;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(18,18,24,0.85); border: 1px solid rgba(164,99,214,0.3);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .music-toggle:hover { border-color: rgba(164,99,214,0.6); transform: scale(1.1); }
+        .music-toggle svg { width: 20px; height: 20px; fill: #cd8cff; }
+        .music-toggle.muted svg { opacity: 0.35; }
     </style>
 </head>
 <body>
@@ -613,6 +674,9 @@
     <div class="loader-bar-track"><div class="loader-bar-fill" id="loaderBar"></div></div>
     <div class="loader-text">LOADING SERVER DATA</div>
 </div>
+
+<!-- Flying Bees -->
+<div class="bee-layer" id="beeLayer"></div>
 
 <!-- Background Effects -->
 <div class="bg-grid"></div>
@@ -1014,6 +1078,138 @@
         });
     }
     document.getElementById('suggestInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendSuggestion(); });
+</script>
+
+<!-- Music Toggle -->
+<div class="music-toggle" id="musicToggle" title="Toggle Music">
+    <svg viewBox="0 0 24 24" id="musicIcon"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6Z"/></svg>
+</div>
+
+<script>
+/* ========== MINECRAFT BEES ========== */
+(function(){
+    const layer = document.getElementById('beeLayer');
+    const beeSVG = `<svg viewBox="0 0 32 28" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="8" width="24" height="16" rx="2" fill="#f5c842"/>
+        <rect x="4" y="12" width="24" height="4" fill="#1a1a1a"/>
+        <rect x="4" y="20" width="24" height="3" fill="#1a1a1a"/>
+        <rect x="26" y="14" width="6" height="2" rx="1" fill="#1a1a1a" opacity="0.6"/>
+        <circle cx="8" cy="13" r="2.5" fill="#1a1a1a"/>
+        <circle cx="8" cy="12" r="1" fill="#fff"/>
+        <rect x="10" y="2" width="5" height="8" rx="2" fill="#fff" opacity="0.5">
+            <animate attributeName="opacity" values="0.5;0.8;0.5" dur="0.12s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="17" y="2" width="5" height="8" rx="2" fill="#fff" opacity="0.5">
+            <animate attributeName="opacity" values="0.8;0.5;0.8" dur="0.12s" repeatCount="indefinite"/>
+        </rect>
+    </svg>`;
+
+    const anims = ['flyAcrossR','flyAcrossL','flyDiag1','flyDiag2'];
+    const beeCount = 8;
+
+    for(let i = 0; i < beeCount; i++){
+        const bee = document.createElement('div');
+        bee.className = 'bee' + (Math.random()>.5?' flip':'');
+        bee.innerHTML = beeSVG;
+
+        const anim = anims[i % anims.length];
+        const dur = 18 + Math.random() * 22;
+        const delay = Math.random() * -40;
+        const topPos = 5 + Math.random() * 85;
+        const size = 24 + Math.random() * 20;
+
+        bee.style.top = topPos + 'vh';
+        bee.style.width = size + 'px';
+        bee.style.opacity = 0.3 + Math.random() * 0.35;
+        bee.style.animation = `${anim} ${dur}s linear ${delay}s infinite, bob ${2+Math.random()*2}s ease-in-out infinite`;
+
+        layer.appendChild(bee);
+    }
+})();
+
+/* ========== SOFT MELODY (Web Audio API — 45s loop) ========== */
+(function(){
+    let ctx, playing = false, started = false;
+    let masterGain, nodes = [];
+
+    /* Pentatonic scale notes in octave 4-5 (dreamy, can't sound bad) */
+    const scale = [261.6,293.7,329.6,392.0,440.0,523.3,587.3,659.3,784.0];
+    /* The melody — indices into the scale, each note = ~1.8s */
+    const melody = [0,2,4,5,3,1,4,2,5,7,6,4,3,5,2,0,1,3,5,4,6,8,7,5,3];
+
+    function buildMelody(){
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = ctx.createGain();
+        masterGain.gain.value = 0;
+        masterGain.connect(ctx.destination);
+
+        /* Pad layer — warm chord drone */
+        const padFreqs = [261.6, 392.0, 523.3];
+        padFreqs.forEach(f => {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = f;
+            g.gain.value = 0.04;
+            osc.connect(g);
+            g.connect(masterGain);
+            osc.start();
+            nodes.push(osc);
+        });
+
+        /* Melody layer — soft pluck notes */
+        function playNote(time, freq){
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = freq;
+            g.gain.setValueAtTime(0.12, time);
+            g.gain.exponentialRampToValueAtTime(0.001, time + 1.6);
+            osc.connect(g);
+            g.connect(masterGain);
+            osc.start(time);
+            osc.stop(time + 1.8);
+        }
+
+        function scheduleLoop(){
+            const now = ctx.currentTime;
+            melody.forEach((noteIdx, i) => {
+                playNote(now + i * 1.8, scale[noteIdx]);
+            });
+            /* Schedule next loop at 45s */
+            setTimeout(scheduleLoop, 45000);
+        }
+
+        scheduleLoop();
+        started = true;
+    }
+
+    function fadeIn(){
+        if(!started) buildMelody();
+        if(ctx.state==='suspended') ctx.resume();
+        masterGain.gain.cancelScheduledValues(ctx.currentTime);
+        masterGain.gain.setValueAtTime(masterGain.gain.value, ctx.currentTime);
+        masterGain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.5);
+        playing = true;
+    }
+
+    function fadeOut(){
+        masterGain.gain.cancelScheduledValues(ctx.currentTime);
+        masterGain.gain.setValueAtTime(masterGain.gain.value, ctx.currentTime);
+        masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+        playing = false;
+    }
+
+    const btn = document.getElementById('musicToggle');
+
+    btn.addEventListener('click', function(){
+        if(!playing){ fadeIn(); btn.classList.remove('muted'); }
+        else { fadeOut(); btn.classList.add('muted'); }
+    });
+
+    /* Start muted — user clicks to enable */
+    btn.classList.add('muted');
+})();
 </script>
 
 </body>
