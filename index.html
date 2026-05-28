@@ -739,6 +739,21 @@
     </div>
 </section>
 
+<!-- ========== SUGGESTIONS ========== -->
+<section id="suggestions">
+    <div class="container">
+        <div class="cta-box reveal" style="padding:48px 40px;">
+            <h2>&#128172; Got a Suggestion?</h2>
+            <p>Help shape GCore. Your idea goes straight to our Discord suggestions channel.</p>
+            <div class="suggest-form" style="max-width:520px;margin:28px auto 0;display:flex;gap:10px;">
+                <input type="text" id="suggestInput" placeholder="Type your suggestion..." style="flex:1;padding:14px 20px;background:rgba(0,0,0,0.3);border:1px solid var(--border-subtle);border-radius:10px;color:var(--text-primary);font-size:.95rem;outline:none;font-family:inherit;" maxlength="500">
+                <button onclick="sendSuggestion()" id="suggestBtn" style="padding:14px 28px;background:var(--purple-main);border:none;color:#fff;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .2s;white-space:nowrap;font-family:inherit;">Send</button>
+            </div>
+            <p id="suggestStatus" style="margin-top:12px;font-size:.85rem;color:var(--text-muted);min-height:20px;"></p>
+        </div>
+    </div>
+</section>
+
 <!-- ========== FOOTER ========== -->
 <footer>
     <div class="container">
@@ -798,6 +813,43 @@
         dots[currentSlide].classList.add('active');
     }
     setInterval(() => { goSlide((currentSlide + 1) % slides.length); }, 4000);
+
+    // Suggestion webhook
+    function sendSuggestion() {
+        const input = document.getElementById('suggestInput');
+        const btn = document.getElementById('suggestBtn');
+        const status = document.getElementById('suggestStatus');
+        const msg = input.value.trim();
+        if (!msg) { status.textContent = 'Please type a suggestion first.'; status.style.color = '#f87171'; return; }
+        if (msg.length < 5) { status.textContent = 'Too short! Write at least a few words.'; status.style.color = '#f87171'; return; }
+        btn.disabled = true; btn.textContent = 'Sending...';
+        fetch('https://discord.com/api/webhooks/1509541989505564834/i2e9tbNkqKTLMdhJOBsU_ZavZXoajK6EXQpFxCNkniKvSNv4M2ZbjcQlqtjLIYVZ9EuX', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                embeds: [{
+                    title: '💡 Website Suggestion',
+                    description: msg,
+                    color: 0xa463d6,
+                    footer: { text: 'Sent from gcoremc.com' },
+                    timestamp: new Date().toISOString()
+                }]
+            })
+        }).then(r => {
+            if (r.ok) {
+                status.textContent = '✅ Suggestion sent! Thanks for your feedback.';
+                status.style.color = '#4ade80';
+                input.value = '';
+                btn.textContent = 'Sent!'; btn.style.background = '#22c55e';
+                setTimeout(() => { btn.textContent = 'Send'; btn.style.background = ''; btn.disabled = false; }, 3000);
+            } else { throw new Error(); }
+        }).catch(() => {
+            status.textContent = '❌ Failed to send. Try again or post in Discord.';
+            status.style.color = '#f87171';
+            btn.textContent = 'Send'; btn.disabled = false;
+        });
+    }
+    document.getElementById('suggestInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendSuggestion(); });
 </script>
 
 </body>
