@@ -13,6 +13,54 @@
         /* ========== RESET & BASE ========== */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
+        /* ========== LOADING SCREEN ========== */
+        .loader-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #0a0a0f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .loader-wrap.done { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loader-logo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #cd8cff, #a463d6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 32px;
+            animation: loaderPulse 1.2s ease infinite;
+        }
+        @keyframes loaderPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.97); }
+        }
+        .loader-bar-track {
+            width: 200px;
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .loader-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #a463d6, #cd8cff);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .loader-text {
+            margin-top: 16px;
+            font-size: 0.8rem;
+            color: #5a5a6a;
+            letter-spacing: 1px;
+        }
+
         :root {
             --bg-dark: #0a0a0f;
             --bg-card: #12121a;
@@ -266,6 +314,49 @@
         }
         .hero-meta-item svg { width: 16px; height: 16px; opacity: 0.5; }
 
+        /* Live server stats */
+        .server-stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 32px;
+            animation: fadeInUp 0.6s ease 0.5s both;
+        }
+        .server-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 16px 24px;
+            text-align: center;
+            min-width: 130px;
+            transition: border-color 0.3s;
+        }
+        .server-stat:hover { border-color: rgba(164,99,214,0.25); }
+        .server-stat .stat-num {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--purple-light);
+        }
+        .server-stat .stat-lbl {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+        .status-dot.online { background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.5); animation: pulse-dot 2s infinite; }
+        .status-dot.offline { background: #f87171; box-shadow: 0 0 8px rgba(248,113,113,0.4); }
+
         /* ========== SECTION STYLES ========== */
         section { padding: 100px 0; }
 
@@ -516,6 +607,13 @@
 </head>
 <body>
 
+<!-- Loading Screen -->
+<div class="loader-wrap" id="loader">
+    <div class="loader-logo">GCORE</div>
+    <div class="loader-bar-track"><div class="loader-bar-fill" id="loaderBar"></div></div>
+    <div class="loader-text">LOADING SERVER DATA</div>
+</div>
+
 <!-- Background Effects -->
 <div class="bg-grid"></div>
 <div class="bg-glow bg-glow-1"></div>
@@ -573,6 +671,25 @@
             <div class="hero-meta-item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Hosted on Minehut
+            </div>
+        </div>
+
+        <div class="server-stats" id="serverStats">
+            <div class="server-stat">
+                <div class="stat-num" id="statStatus"><span class="status-dot offline"></span>...</div>
+                <div class="stat-lbl">Status</div>
+            </div>
+            <div class="server-stat">
+                <div class="stat-num" id="statPlayers">-</div>
+                <div class="stat-lbl">Online Now</div>
+            </div>
+            <div class="server-stat">
+                <div class="stat-num" id="statMax">-</div>
+                <div class="stat-lbl">Max Players</div>
+            </div>
+            <div class="server-stat">
+                <div class="stat-num" id="statJoins">-</div>
+                <div class="stat-lbl">Total Joins</div>
             </div>
         </div>
     </div>
@@ -771,6 +888,52 @@
 
 <!-- ========== SCRIPTS ========== -->
 <script>
+    // Loading screen
+    const loaderBar = document.getElementById('loaderBar');
+    const loader = document.getElementById('loader');
+    let loaderProgress = 0;
+    function advanceLoader(target) {
+        const step = () => {
+            if (loaderProgress < target) {
+                loaderProgress += Math.random() * 3 + 1;
+                if (loaderProgress > target) loaderProgress = target;
+                loaderBar.style.width = loaderProgress + '%';
+                requestAnimationFrame(step);
+            }
+        };
+        step();
+    }
+    advanceLoader(30);
+
+    // Fetch live server stats from Minehut API
+    fetch('https://api.minehut.com/server/gcore?byName=true')
+        .then(r => r.json())
+        .then(data => {
+            advanceLoader(80);
+            const s = data.server;
+            const isOnline = s.online === true;
+            document.getElementById('statStatus').innerHTML = '<span class="status-dot ' + (isOnline ? 'online' : 'offline') + '"></span>' + (isOnline ? 'Online' : 'Offline');
+            document.getElementById('statPlayers').textContent = isOnline ? s.playerCount.toLocaleString() : '0';
+            document.getElementById('statMax').textContent = (s.maxPlayers || 500).toLocaleString();
+            document.getElementById('statJoins').textContent = (s.joins || 0).toLocaleString();
+            // Update the hero badge
+            const badge = document.querySelector('.hero-badge');
+            if (badge) {
+                const dot = badge.querySelector('.dot');
+                if (isOnline) { dot.style.background = '#4ade80'; badge.innerHTML = '<span class="dot" style="background:#4ade80;animation:pulse-dot 2s infinite;width:8px;height:8px;border-radius:50%"></span> ' + s.playerCount + ' Playing Now on Minehut'; }
+                else { dot.style.background = '#f87171'; badge.innerHTML = '<span class="dot" style="background:#f87171;width:8px;height:8px;border-radius:50%"></span> Currently Offline'; }
+            }
+            setTimeout(() => { advanceLoader(100); setTimeout(() => loader.classList.add('done'), 300); }, 400);
+        })
+        .catch(() => {
+            document.getElementById('statStatus').innerHTML = '<span class="status-dot offline"></span>Unknown';
+            advanceLoader(100);
+            setTimeout(() => loader.classList.add('done'), 500);
+        });
+
+    // Fallback: remove loader after 4s max
+    setTimeout(() => { if (!loader.classList.contains('done')) { advanceLoader(100); setTimeout(() => loader.classList.add('done'), 300); } }, 4000);
+
     // Header scroll effect
     const header = document.getElementById('header');
     window.addEventListener('scroll', () => {
