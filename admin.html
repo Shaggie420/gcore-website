@@ -755,8 +755,8 @@ async function mhConnect() {
         mhServerId = '699ba8b856a201e85dc55be5';
         document.getElementById('mhStatus').textContent = 'Loading files...';
 
-        // File listing with auth via v1 API
-        const res = await mhFetch('v1/server/' + mhServerId + '/files/list/');
+        // File listing with auth
+        const res = await mhFetch('file/' + mhServerId + '/list/');
         const fileText = await res.text();
         var data;
         try { data = JSON.parse(fileText); } catch(fe) { throw new Error('File API error: ' + fileText.substring(0, 200)); }
@@ -806,7 +806,7 @@ async function mhNavigate(path) {
     document.getElementById('mhPath').textContent = '/' + (path || '') + ' (click to go up)';
 
     try {
-        const endpoint = 'v1/server/' + mhServerId + '/files/list/' + (path ? encodeURIComponent(path) : '');
+        const endpoint = 'file/' + mhServerId + '/list/' + (path || '');
         const res = await mhFetch(endpoint);
         const data = await res.json();
         renderFileList(data.files || data || []);
@@ -829,7 +829,7 @@ async function mhOpenFile(path) {
     document.getElementById('mhCodeEditor').value = 'Loading...';
 
     try {
-        const res = await mhFetch('v1/server/' + mhServerId + '/files/read/' + encodeURIComponent(path));
+        const res = await mhFetch('file/' + mhServerId + '/read/' + path);
         const data = await res.json();
         document.getElementById('mhCodeEditor').value = data.content || '';
     } catch (e) {
@@ -846,7 +846,7 @@ function mhSaveFile() {
     requireConfirm('Save changes to ' + mhCurrentFile + ' on the live server', async () => {
         try {
             const content = document.getElementById('mhCodeEditor').value;
-            const res = await mhFetch('v1/server/' + mhServerId + '/files/edit/' + encodeURIComponent(mhCurrentFile), {
+            const res = await mhFetch('file/' + mhServerId + '/edit/' + mhCurrentFile, {
                 method: 'POST',
                 body: JSON.stringify({ content: content })
             });
