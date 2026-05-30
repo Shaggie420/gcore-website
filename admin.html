@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCore Admin</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--surface3:#22222e;--border:rgba(255,255,255,0.06);--purple:#a463d6;--purple-light:#cd8cff;--purple-glow:rgba(164,99,214,0.3);--green:#4ade80;--red:#f87171;--gold:#ffd700;--text:#f0f0f5;--text2:#8a8a9a;--text3:#5a5a6a;--radius:12px}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ====== LOGIN ====== */
+.login-wrap{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .4s,visibility .4s}
+.login-wrap.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:380px;max-width:90vw;text-align:center}
+.login-box h1{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,var(--purple-light),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.login-box p{color:var(--text3);font-size:.85rem;margin-bottom:28px}
+.login-input{width:100%;padding:14px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:.95rem;outline:none;margin-bottom:12px;font-family:inherit;transition:border-color .2s}
+.login-input:focus{border-color:var(--purple)}
+.login-btn{width:100%;padding:14px;background:var(--purple);border:none;border-radius:var(--radius);color:#fff;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .2s;font-family:inherit;margin-top:4px}
+.login-btn:hover{background:#7b3fad}
+.login-error{color:var(--red);font-size:.82rem;margin-top:12px;min-height:20px}
+
+/* ====== LAYOUT ====== */
+.app{display:none;min-height:100vh}
+.app.active{display:flex}
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);padding:20px 0;position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:50}
+.sidebar-logo{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:800;padding:0 24px 20px;background:linear-gradient(135deg,var(--purple-light),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sidebar-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);padding:16px 24px 8px}
+.sidebar-link{display:flex;align-items:center;gap:12px;padding:10px 24px;color:var(--text2);font-size:.88rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none}
+.sidebar-link:hover{background:rgba(164,99,214,0.05);color:var(--text)}
+.sidebar-link.active{color:var(--purple-light);background:rgba(164,99,214,0.08);border-left-color:var(--purple)}
+.sidebar-link svg{width:18px;height:18px;opacity:.6;flex-shrink:0}
+.sidebar-link.active svg{opacity:1}
+.sidebar-spacer{flex:1}
+.sidebar-footer{padding:16px 24px;border-top:1px solid var(--border);font-size:.75rem;color:var(--text3)}
+.main{margin-left:240px;flex:1;padding:32px 40px;min-height:100vh}
+
+/* ====== PAGES ====== */
+.page{display:none}
+.page.active{display:block}
+.page-title{font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;margin-bottom:8px}
+.page-sub{color:var(--text2);font-size:.9rem;margin-bottom:32px}
+
+/* ====== CARDS ====== */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.card-title{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+
+/* ====== STAT GRID ====== */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px}
+.stat-card .num{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;color:var(--purple-light)}
+.stat-card .lbl{font-size:.75rem;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:1px}
+
+/* ====== TABLE ====== */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:10px 16px;border-bottom:1px solid var(--border)}
+.tbl td{padding:12px 16px;font-size:.88rem;border-bottom:1px solid var(--border);color:var(--text2)}
+.tbl tr:hover td{background:rgba(164,99,214,0.03)}
+
+/* ====== BUTTONS ====== */
+.btn{padding:8px 18px;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn-purple{background:var(--purple);color:#fff}.btn-purple:hover{background:#7b3fad}
+.btn-green{background:rgba(74,222,128,.15);color:var(--green);border:1px solid rgba(74,222,128,.2)}.btn-green:hover{background:rgba(74,222,128,.25)}
+.btn-red{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.15)}.btn-red:hover{background:rgba(248,113,113,.2)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--purple);color:var(--text)}
+.btn-sm{padding:6px 14px;font-size:.78rem}
+
+/* ====== FORMS ====== */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-input,.form-select,.form-textarea{width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.88rem;outline:none;font-family:inherit;transition:border-color .2s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--purple)}
+.form-textarea{min-height:200px;resize:vertical;font-family:'Courier New',monospace;font-size:.82rem}
+.form-row{display:flex;gap:12px}
+.form-row>*{flex:1}
+
+/* ====== BADGE ====== */
+.badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.badge-admin{background:rgba(164,99,214,.15);color:var(--purple-light)}
+.badge-mod{background:rgba(74,222,128,.15);color:var(--green)}
+.badge-viewer{background:rgba(96,165,250,.15);color:#60a5fa}
+
+/* ====== CONFIRM MODAL ====== */
+.modal-overlay{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px;width:420px;max-width:90vw;text-align:center}
+.modal h3{font-family:'Space Grotesk',sans-serif;font-size:1.2rem;margin-bottom:8px}
+.modal p{color:var(--text2);font-size:.88rem;margin-bottom:20px}
+.modal .confirm-input{width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;text-align:center;letter-spacing:3px;font-family:'Space Grotesk',monospace;outline:none;margin-bottom:16px}
+.modal .confirm-input:focus{border-color:var(--purple)}
+.modal-btns{display:flex;gap:10px;justify-content:center}
+.confirm-error{color:var(--red);font-size:.8rem;margin-bottom:12px;min-height:18px}
+
+/* ====== FILE BROWSER ====== */
+.file-list{display:flex;flex-direction:column;gap:4px}
+.file-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:8px;cursor:pointer;transition:background .15s}
+.file-item:hover{background:var(--surface2)}
+.file-item .icon{font-size:1.1rem;width:24px;text-align:center}
+.file-item .name{flex:1;font-size:.88rem}
+.file-item .size{font-size:.78rem;color:var(--text3)}
+.file-item.active{background:rgba(164,99,214,0.1);border:1px solid rgba(164,99,214,0.2)}
+
+/* ====== EDITOR ====== */
+.editor-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
+.editor-tab{padding:10px 20px;font-size:.82rem;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.editor-tab:hover{color:var(--text2)}
+.editor-tab.active{color:var(--purple-light);border-bottom-color:var(--purple)}
+
+/* ====== SFTP ====== */
+.sftp-connect{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:24px}
+.sftp-status{display:flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;font-size:.85rem;font-weight:600}
+.sftp-status.online{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.2)}
+.sftp-status.offline{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.15)}
+
+/* ====== TOAST ====== */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 24px;font-size:.88rem;z-index:9999;transform:translateY(100px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:rgba(74,222,128,.3);color:var(--green)}
+.toast.error{border-color:rgba(248,113,113,.3);color:var(--red)}
+
+/* ====== RESPONSIVE ====== */
+@media(max-width:768px){
+.sidebar{width:60px;padding:12px 0}
+.sidebar-logo,.sidebar-label,.sidebar-link span,.sidebar-footer{display:none}
+.sidebar-link{justify-content:center;padding:12px;border-left:none}
+.main{margin-left:60px;padding:20px 16px}
+.stat-grid{grid-template-columns:1fr 1fr}
+.form-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- ====== LOGIN SCREEN ====== -->
+<div class="login-wrap" id="loginWrap">
+<div class="login-box">
+    <h1>GCORE ADMIN</h1>
+    <p>Authorized personnel only</p>
+    <input type="text" class="login-input" id="loginUser" placeholder="Username" autocomplete="off">
+    <input type="password" class="login-input" id="loginPass" placeholder="Password" autocomplete="off">
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="loginErr"></div>
+</div>
+</div>
+
+<!-- ====== CONFIRM MODAL ====== -->
+<div class="modal-overlay" id="confirmModal">
+<div class="modal">
+    <h3>🔒 Confirm Action</h3>
+    <p id="confirmMsg">Type the confirmation code to apply this change.</p>
+    <input type="text" class="confirm-input" id="confirmCode" placeholder="gcore2026" autocomplete="off">
+    <div class="confirm-error" id="confirmErr"></div>
+    <div class="modal-btns">
+        <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+        <button class="btn btn-purple" onclick="submitConfirm()">Apply Change</button>
+    </div>
+</div>
+</div>
+
+<!-- ====== TOAST ====== -->
+<div class="toast" id="toast"></div>
+
+<!-- ====== APP ====== -->
+<div class="app" id="app">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="sidebar-logo">GCORE</div>
+    <div class="sidebar-label">Overview</div>
+    <a class="sidebar-link active" onclick="showPage('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Dashboard</span>
+    </a>
+    <div class="sidebar-label">Management</div>
+    <a class="sidebar-link" onclick="showPage('mods')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Mod Accounts</span>
+    </a>
+    <a class="sidebar-link" onclick="showPage('editor')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <span>Site Editor</span>
+    </a>
+    <a class="sidebar-link" onclick="showPage('sftp')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>SFTP Files</span>
+    </a>
+    <div class="sidebar-label">Settings</div>
+    <a class="sidebar-link" onclick="showPage('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <span>Settings</span>
+    </a>
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-footer">
+        <span id="loggedUser">Shaggy0302</span><br>
+        <a style="color:var(--red);cursor:pointer;font-size:.72rem" onclick="doLogout()">Sign Out</a>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Server overview and quick stats</div>
+    <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="d-status">-</div><div class="lbl">Status</div></div>
+        <div class="stat-card"><div class="num" id="d-players">-</div><div class="lbl">Players Online</div></div>
+        <div class="stat-card"><div class="num" id="d-joins">-</div><div class="lbl">Total Joins</div></div>
+        <div class="stat-card"><div class="num" id="d-mods">0</div><div class="lbl">Mod Accounts</div></div>
+    </div>
+    <div class="card">
+        <div class="card-title"><span class="dot"></span> Live Server Feed</div>
+        <div id="serverInfo" style="color:var(--text2);font-size:.88rem">Loading server data...</div>
+    </div>
+    <div class="card">
+        <div class="card-title">Quick Actions</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-purple" onclick="showPage('editor')">Edit Site Pages</button>
+            <button class="btn btn-green" onclick="showPage('mods')">Manage Mods</button>
+            <button class="btn btn-ghost" onclick="showPage('sftp')">Open SFTP</button>
+            <button class="btn btn-ghost" onclick="window.open('https://minehut.com/dashboard','_blank')">Minehut Panel</button>
+        </div>
+    </div>
+</div>
+
+<!-- MOD ACCOUNTS -->
+<div class="page" id="page-mods">
+    <div class="page-title">Mod Accounts</div>
+    <div class="page-sub">Create and manage staff access</div>
+    <div class="card">
+        <div class="card-title">Add New Mod</div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="newModUser" placeholder="ModName"></div>
+            <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="newModPass" placeholder="Password"></div>
+            <div class="form-group"><label class="form-label">Role</label>
+                <select class="form-select" id="newModRole">
+                    <option value="mod">Moderator</option>
+                    <option value="viewer">Viewer (Read Only)</option>
+                </select>
+            </div>
+        </div>
+        <div style="margin-top:4px">
+            <label class="form-label">Permissions</label>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px">
+                <label style="font-size:.85rem;color:var(--text2);cursor:pointer"><input type="checkbox" id="perm-editor" style="margin-right:6px">Site Editor</label>
+                <label style="font-size:.85rem;color:var(--text2);cursor:pointer"><input type="checkbox" id="perm-sftp" style="margin-right:6px">SFTP Access</label>
+                <label style="font-size:.85rem;color:var(--text2);cursor:pointer"><input type="checkbox" id="perm-mods" style="margin-right:6px">Mod Management</label>
+                <label style="font-size:.85rem;color:var(--text2);cursor:pointer"><input type="checkbox" id="perm-settings" style="margin-right:6px">Settings</label>
+            </div>
+        </div>
+        <div style="margin-top:16px"><button class="btn btn-purple" onclick="addMod()">Create Account</button></div>
+    </div>
+    <div class="card">
+        <div class="card-title">Active Accounts</div>
+        <table class="tbl">
+            <thead><tr><th>Username</th><th>Role</th><th>Permissions</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody id="modTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- SITE EDITOR -->
+<div class="page" id="page-editor">
+    <div class="page-title">Site Editor</div>
+    <div class="page-sub">Edit any page on gcoremc.com via GitHub</div>
+    <div class="card" style="margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">GitHub Token <span style="color:var(--text3);font-weight:400;text-transform:none">(stored locally, never sent to us)</span></label>
+            <div style="display:flex;gap:10px">
+                <input type="password" class="form-input" id="ghToken" placeholder="ghp_xxxxxxxxxxxx" style="flex:1">
+                <button class="btn btn-purple" onclick="saveToken()">Save</button>
+            </div>
+        </div>
+    </div>
+    <div style="display:flex;gap:16px">
+        <div style="width:220px;flex-shrink:0">
+            <div class="card" style="padding:16px">
+                <div style="font-size:.78rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Site Files</div>
+                <div class="file-list" id="fileList">
+                    <div class="file-item active" onclick="loadFile('index.html')"><span class="icon">📄</span><span class="name">index.html</span></div>
+                    <div class="file-item" onclick="loadFile('patchnotes.html')"><span class="icon">📄</span><span class="name">patchnotes.html</span></div>
+                    <div class="file-item" onclick="loadFile('tutorials.html')"><span class="icon">📄</span><span class="name">tutorials.html</span></div>
+                    <div class="file-item" onclick="loadFile('admin.html')"><span class="icon">📄</span><span class="name">admin.html</span></div>
+                    <div class="file-item" onclick="loadFile('CNAME')"><span class="icon">⚙</span><span class="name">CNAME</span></div>
+                </div>
+                <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+                    <div style="font-size:.78rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Images</div>
+                    <div class="file-list" id="imageList">
+                        <div class="file-item"><span class="icon">🖼</span><span class="name">spawn.png</span></div>
+                        <div class="file-item"><span class="icon">🖼</span><span class="name">farm.png</span></div>
+                        <div class="file-item"><span class="icon">🖼</span><span class="name">fishing.png</span></div>
+                        <div class="file-item"><span class="icon">🖼</span><span class="name">generators.png</span></div>
+                        <div class="file-item"><span class="icon">🖼</span><span class="name">mine.png</span></div>
+                        <div class="file-item"><span class="icon">🖼</span><span class="name">parkour.png</span></div>
+                        <div class="file-item"><span class="icon">🖼</span><span class="name">beekeeper.png</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="flex:1">
+            <div class="card" style="padding:16px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <div style="font-size:.88rem;font-weight:600">Editing: <span id="editingFile" style="color:var(--purple-light)">index.html</span></div>
+                    <div style="display:flex;gap:8px">
+                        <button class="btn btn-ghost btn-sm" onclick="fetchFile()">Reload</button>
+                        <button class="btn btn-purple btn-sm" onclick="saveFile()">Save & Deploy</button>
+                    </div>
+                </div>
+                <textarea class="form-textarea" id="codeEditor" style="min-height:500px" placeholder="Select a file to edit..."></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SFTP FILES -->
+<div class="page" id="page-sftp">
+    <div class="page-title">SFTP Access</div>
+    <div class="page-sub">Connect to your Minehut server files</div>
+    <div class="card">
+        <div class="card-title">Connection Details</div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Host</label><input type="text" class="form-input" id="sftpHost" placeholder="na.minehut.com" value="na.minehut.com"></div>
+            <div class="form-group"><label class="form-label">Port</label><input type="text" class="form-input" id="sftpPort" placeholder="22" value="22"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="sftpUser" placeholder="Minehut username"></div>
+            <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="sftpPass" placeholder="Minehut password"></div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:10px;align-items:center">
+            <button class="btn btn-purple" onclick="saveSftp()">Save Connection</button>
+            <button class="btn btn-ghost" onclick="window.open('https://minehut.com/dashboard','_blank')">Open Minehut Panel</button>
+            <span style="color:var(--text3);font-size:.8rem">SFTP requires a desktop client like FileZilla or WinSCP — credentials are saved here for quick reference.</span>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-title">Quick Copy</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="background:var(--surface2);border-radius:8px;padding:14px;cursor:pointer" onclick="copyText(document.getElementById('sftpHost').value)">
+                <div style="font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Host</div>
+                <div style="font-size:.92rem;margin-top:4px" id="copyHost">na.minehut.com</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:14px;cursor:pointer" onclick="copyText(document.getElementById('sftpPort').value)">
+                <div style="font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Port</div>
+                <div style="font-size:.92rem;margin-top:4px">22</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:14px;cursor:pointer" onclick="copyText(document.getElementById('sftpUser').value)">
+                <div style="font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Username</div>
+                <div style="font-size:.92rem;margin-top:4px" id="copyUser">-</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:14px;cursor:pointer" onclick="copyText(document.getElementById('sftpPass').value)">
+                <div style="font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Password</div>
+                <div style="font-size:.92rem;margin-top:4px">••••••• (click to copy)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="page-settings">
+    <div class="page-title">Settings</div>
+    <div class="page-sub">Customize your admin panel</div>
+    <div class="card">
+        <div class="card-title">Appearance</div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Accent Color</label>
+                <input type="color" class="form-input" id="accentColor" value="#a463d6" style="height:42px;cursor:pointer">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Background</label>
+                <select class="form-select" id="bgStyle">
+                    <option value="default">Default Dark</option>
+                    <option value="darker">Pitch Black</option>
+                    <option value="grid">Grid Overlay</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Font Scale</label>
+                <select class="form-select" id="fontScale">
+                    <option value="0.9">Small</option>
+                    <option value="1" selected>Normal</option>
+                    <option value="1.1">Large</option>
+                    <option value="1.2">Extra Large</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-purple" onclick="applySettings()">Apply Settings</button>
+    </div>
+    <div class="card">
+        <div class="card-title" style="color:var(--red)">Danger Zone</div>
+        <div style="display:flex;gap:10px">
+            <button class="btn btn-red btn-sm" onclick="clearAllData()">Wipe All Local Data</button>
+        </div>
+    </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* ============================================================
+   AUTH SYSTEM (SHA-256 hashed, never stores plaintext)
+   ============================================================ */
+const ADMIN_HASH = '38dd4d6d6d8cba719d1971264a637177e562b6cdf43d7bd61727ae1d96348737';
+const ADMIN_USER = 'shaggy0302';
+
+async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin() {
+    const user = document.getElementById('loginUser').value.trim().toLowerCase();
+    const pass = document.getElementById('loginPass').value;
+    const err = document.getElementById('loginErr');
+
+    if (!user || !pass) { err.textContent = 'Enter both fields.'; return; }
+
+    const hash = await sha256(pass);
+
+    // Check admin
+    if (user === ADMIN_USER && hash === ADMIN_HASH) {
+        sessionStorage.setItem('gcore_auth', 'admin');
+        sessionStorage.setItem('gcore_user', 'Shaggy0302');
+        unlockApp('Shaggy0302', 'admin');
+        return;
+    }
+
+    // Check mod accounts
+    const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+    const mod = mods.find(m => m.user.toLowerCase() === user && m.hash === hash);
+    if (mod) {
+        sessionStorage.setItem('gcore_auth', mod.role);
+        sessionStorage.setItem('gcore_user', mod.user);
+        unlockApp(mod.user, mod.role);
+        return;
+    }
+
+    err.textContent = 'Invalid credentials.';
+}
+
+function unlockApp(username, role) {
+    document.getElementById('loginWrap').classList.add('hidden');
+    document.getElementById('app').classList.add('active');
+    document.getElementById('loggedUser').textContent = username;
+
+    // Hide pages based on permissions for mod accounts
+    if (role !== 'admin') {
+        const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+        const mod = mods.find(m => m.user === username);
+        if (mod) {
+            document.querySelectorAll('.sidebar-link').forEach(l => {
+                const page = l.getAttribute('onclick')?.match(/showPage\('(.+?)'\)/)?.[1];
+                if (page && !mod.perms.includes(page) && page !== 'dashboard') {
+                    l.style.display = 'none';
+                }
+            });
+        }
+    }
+
+    loadDashboard();
+    loadModTable();
+    loadSavedSettings();
+
+    const token = localStorage.getItem('gcore_gh_token');
+    if (token) document.getElementById('ghToken').value = token;
+    const sftp = JSON.parse(localStorage.getItem('gcore_sftp') || '{}');
+    if (sftp.host) document.getElementById('sftpHost').value = sftp.host;
+    if (sftp.port) document.getElementById('sftpPort').value = sftp.port;
+    if (sftp.user) { document.getElementById('sftpUser').value = sftp.user; document.getElementById('copyUser').textContent = sftp.user; }
+    if (sftp.pass) document.getElementById('sftpPass').value = sftp.pass;
+}
+
+function doLogout() {
+    sessionStorage.clear();
+    location.reload();
+}
+
+// Auto-login if session exists
+window.addEventListener('DOMContentLoaded', () => {
+    if (sessionStorage.getItem('gcore_auth')) {
+        unlockApp(sessionStorage.getItem('gcore_user'), sessionStorage.getItem('gcore_auth'));
+    }
+    document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+});
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.querySelector(`.sidebar-link[onclick="showPage('${id}')"]`)?.classList.add('active');
+}
+
+/* ============================================================
+   CONFIRM MODAL (gcore2026 required for every change)
+   ============================================================ */
+let pendingAction = null;
+
+function requireConfirm(msg, action) {
+    pendingAction = action;
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmCode').value = '';
+    document.getElementById('confirmErr').textContent = '';
+    document.getElementById('confirmModal').classList.add('show');
+    setTimeout(() => document.getElementById('confirmCode').focus(), 100);
+}
+
+function submitConfirm() {
+    const code = document.getElementById('confirmCode').value.trim();
+    if (code !== 'gcore2026') {
+        document.getElementById('confirmErr').textContent = 'Invalid confirmation code.';
+        return;
+    }
+    document.getElementById('confirmModal').classList.remove('show');
+    if (pendingAction) { pendingAction(); pendingAction = null; }
+}
+
+function closeConfirm() {
+    document.getElementById('confirmModal').classList.remove('show');
+    pendingAction = null;
+}
+
+document.getElementById('confirmCode').addEventListener('keydown', e => { if (e.key === 'Enter') submitConfirm(); });
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+function toast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard!'));
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function loadDashboard() {
+    fetch('https://api.minehut.com/server/gcore?byName=true')
+        .then(r => r.json())
+        .then(data => {
+            const s = data.server;
+            const on = s.online === true;
+            document.getElementById('d-status').innerHTML = on ? '<span style="color:var(--green)">Online</span>' : '<span style="color:var(--red)">Offline</span>';
+            document.getElementById('d-players').textContent = on ? s.playerCount : 0;
+            document.getElementById('d-joins').textContent = (s.joins || 0).toLocaleString();
+            document.getElementById('serverInfo').innerHTML = `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-top:8px">
+                    <div><span style="color:var(--text3)">Server:</span> ${s.name || 'GCore'}</div>
+                    <div><span style="color:var(--text3)">Max:</span> ${s.maxPlayers || 500}</div>
+                    <div><span style="color:var(--text3)">Plan:</span> ${s.server_plan || 'N/A'}</div>
+                    <div><span style="color:var(--text3)">Version:</span> ${s.server_version_type || 'Paper'}</div>
+                </div>`;
+        })
+        .catch(() => { document.getElementById('serverInfo').textContent = 'Could not fetch server data.'; });
+
+    const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+    document.getElementById('d-mods').textContent = mods.length;
+}
+
+setInterval(loadDashboard, 30000);
+
+/* ============================================================
+   MOD ACCOUNTS (localStorage)
+   ============================================================ */
+async function addMod() {
+    const user = document.getElementById('newModUser').value.trim();
+    const pass = document.getElementById('newModPass').value;
+    const role = document.getElementById('newModRole').value;
+    if (!user || !pass) { toast('Fill in all fields.', 'error'); return; }
+
+    const perms = [];
+    if (document.getElementById('perm-editor').checked) perms.push('editor');
+    if (document.getElementById('perm-sftp').checked) perms.push('sftp');
+    if (document.getElementById('perm-mods').checked) perms.push('mods');
+    if (document.getElementById('perm-settings').checked) perms.push('settings');
+
+    requireConfirm('Create mod account: ' + user, async () => {
+        const hash = await sha256(pass);
+        const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+        mods.push({ user, hash, role, perms, created: new Date().toLocaleDateString() });
+        localStorage.setItem('gcore_mods', JSON.stringify(mods));
+        document.getElementById('newModUser').value = '';
+        document.getElementById('newModPass').value = '';
+        loadModTable();
+        loadDashboard();
+        toast('Mod account created: ' + user);
+    });
+}
+
+function loadModTable() {
+    const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+    const tbody = document.getElementById('modTable');
+    if (mods.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3)">No mod accounts yet</td></tr>'; return; }
+    tbody.innerHTML = mods.map((m, i) => `
+        <tr>
+            <td style="font-weight:600;color:var(--text)">${m.user}</td>
+            <td><span class="badge badge-${m.role}">${m.role}</span></td>
+            <td>${m.perms.join(', ') || 'None'}</td>
+            <td>${m.created}</td>
+            <td><button class="btn btn-red btn-sm" onclick="deleteMod(${i})">Remove</button></td>
+        </tr>`).join('');
+}
+
+function deleteMod(idx) {
+    const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+    const name = mods[idx]?.user;
+    requireConfirm('Delete mod account: ' + name, () => {
+        mods.splice(idx, 1);
+        localStorage.setItem('gcore_mods', JSON.stringify(mods));
+        loadModTable();
+        loadDashboard();
+        toast('Deleted: ' + name);
+    });
+}
+
+/* ============================================================
+   SITE EDITOR (GitHub API)
+   ============================================================ */
+let currentFile = 'index.html';
+let currentSha = '';
+
+function saveToken() {
+    const token = document.getElementById('ghToken').value.trim();
+    requireConfirm('Save GitHub token for site editing', () => {
+        localStorage.setItem('gcore_gh_token', token);
+        toast('Token saved locally.');
+    });
+}
+
+function loadFile(name) {
+    currentFile = name;
+    document.getElementById('editingFile').textContent = name;
+    document.querySelectorAll('.file-item').forEach(f => f.classList.remove('active'));
+    event.currentTarget?.classList.add('active');
+    fetchFile();
+}
+
+function fetchFile() {
+    const token = localStorage.getItem('gcore_gh_token');
+    if (!token) { document.getElementById('codeEditor').value = '// Set your GitHub token above to load files.'; return; }
+
+    document.getElementById('codeEditor').value = 'Loading...';
+    fetch(`https://api.github.com/repos/Shaggie420/gcore-website/contents/${currentFile}`, {
+        headers: { 'Authorization': 'token ' + token }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.content) {
+            document.getElementById('codeEditor').value = atob(data.content.replace(/\n/g, ''));
+            currentSha = data.sha;
+        } else {
+            document.getElementById('codeEditor').value = '// Error: ' + (data.message || 'Could not load file');
+        }
+    })
+    .catch(e => { document.getElementById('codeEditor').value = '// Network error: ' + e.message; });
+}
+
+function saveFile() {
+    const token = localStorage.getItem('gcore_gh_token');
+    if (!token) { toast('Set GitHub token first!', 'error'); return; }
+
+    requireConfirm('Deploy changes to ' + currentFile + ' on gcoremc.com', () => {
+        const content = btoa(unescape(encodeURIComponent(document.getElementById('codeEditor').value)));
+        fetch(`https://api.github.com/repos/Shaggie420/gcore-website/contents/${currentFile}`, {
+            method: 'PUT',
+            headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: 'Admin panel edit: ' + currentFile,
+                content: content,
+                sha: currentSha
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.content) {
+                currentSha = data.content.sha;
+                toast('Deployed to gcoremc.com!');
+            } else {
+                toast('Error: ' + (data.message || 'Deploy failed'), 'error');
+            }
+        })
+        .catch(e => toast('Network error: ' + e.message, 'error'));
+    });
+}
+
+/* ============================================================
+   SFTP (Save credentials for reference)
+   ============================================================ */
+function saveSftp() {
+    requireConfirm('Save SFTP connection details', () => {
+        const data = {
+            host: document.getElementById('sftpHost').value,
+            port: document.getElementById('sftpPort').value,
+            user: document.getElementById('sftpUser').value,
+            pass: document.getElementById('sftpPass').value
+        };
+        localStorage.setItem('gcore_sftp', JSON.stringify(data));
+        document.getElementById('copyUser').textContent = data.user;
+        toast('SFTP details saved.');
+    });
+}
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+function applySettings() {
+    requireConfirm('Apply appearance settings', () => {
+        const accent = document.getElementById('accentColor').value;
+        const bg = document.getElementById('bgStyle').value;
+        const scale = document.getElementById('fontScale').value;
+
+        document.documentElement.style.setProperty('--purple', accent);
+        document.documentElement.style.setProperty('--purple-light', accent);
+        document.body.style.fontSize = scale + 'rem';
+
+        if (bg === 'darker') document.body.style.background = '#000';
+        else if (bg === 'grid') document.body.style.backgroundImage = 'linear-gradient(rgba(164,99,214,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(164,99,214,0.03) 1px, transparent 1px)';
+        else { document.body.style.background = '#0a0a0f'; document.body.style.backgroundImage = 'none'; }
+
+        localStorage.setItem('gcore_settings', JSON.stringify({ accent, bg, scale }));
+        toast('Settings applied!');
+    });
+}
+
+function loadSavedSettings() {
+    const s = JSON.parse(localStorage.getItem('gcore_settings') || 'null');
+    if (!s) return;
+    document.getElementById('accentColor').value = s.accent;
+    document.getElementById('bgStyle').value = s.bg;
+    document.getElementById('fontScale').value = s.scale;
+    // Apply silently
+    document.documentElement.style.setProperty('--purple', s.accent);
+    document.documentElement.style.setProperty('--purple-light', s.accent);
+    document.body.style.fontSize = s.scale + 'rem';
+    if (s.bg === 'darker') document.body.style.background = '#000';
+    else if (s.bg === 'grid') document.body.style.backgroundImage = 'linear-gradient(rgba(164,99,214,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(164,99,214,0.03) 1px, transparent 1px)';
+}
+
+function clearAllData() {
+    requireConfirm('WIPE ALL local admin data (mods, settings, tokens)', () => {
+        localStorage.removeItem('gcore_mods');
+        localStorage.removeItem('gcore_gh_token');
+        localStorage.removeItem('gcore_sftp');
+        localStorage.removeItem('gcore_settings');
+        toast('All local data wiped.');
+        setTimeout(() => location.reload(), 1000);
+    });
+}
+</script>
+</body>
+</html>
