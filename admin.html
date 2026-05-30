@@ -721,9 +721,21 @@ let mhCurrentPath = '';
 let mhCurrentFile = '';
 const MH_PROXY = 'https://gcore-proxy.waynerhoads2003.workers.dev/proxy/';
 
+function mhSessionFromToken(token) {
+    // The session ID is baked inside the JWT payload — extract it
+    try {
+        var parts = token.split('.');
+        if (parts.length < 2) return '';
+        var payload = JSON.parse(atob(parts[1].replace(/-/g,'+').replace(/_/g,'/')));
+        return payload.sessionId || payload.session_id || '';
+    } catch(e) { return ''; }
+}
+
 function mhHeaders() {
+    var token = (localStorage.getItem('gcore_mh_token') || '').replace(/^Bearer\s+/i, '').trim();
     return {
-        'Authorization': 'Bearer ' + (localStorage.getItem('gcore_mh_token') || ''),
+        'Authorization': 'Bearer ' + token,
+        'x-session-id': mhSessionFromToken(token),
         'Content-Type': 'application/json'
     };
 }
