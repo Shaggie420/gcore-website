@@ -324,10 +324,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="page-sub">Browse and edit your Minehut server files live</div>
     <div class="card" style="margin-bottom:16px">
         <div class="card-title">Minehut API Connection</div>
-        <p style="color:var(--text3);font-size:.82rem;margin-bottom:12px">To get your tokens: Log into <a href="https://app.minehut.com/dashboard" target="_blank" style="color:var(--purple-light)">app.minehut.com</a> → Press F12 → Application tab → Local Storage → Copy <strong>slg_user_token</strong> and <strong>minehut_session_id</strong></p>
-        <div class="form-row">
-            <div class="form-group"><label class="form-label">Auth Token (slg_user_token)</label><input type="password" class="form-input" id="mhToken" placeholder="Paste slg_user_token value"></div>
-            <div class="form-group"><label class="form-label">Session ID (minehut_session_id)</label><input type="password" class="form-input" id="mhSession" placeholder="Paste minehut_session_id value"></div>
+        <p style="color:var(--text3);font-size:.82rem;margin-bottom:12px">To get your token: Log into <a href="https://app.minehut.com/dashboard/files" target="_blank" style="color:var(--purple-light)">app.minehut.com</a> → F12 → Network tab → click any request → copy the Authorization Bearer token (starts with eyJ...)</p>
+        <div class="form-group">
+            <label class="form-label">Bearer Token (starts with eyJ...)</label>
+            <input type="password" class="form-input" id="mhToken" placeholder="Paste the long eyJ... token here">
         </div>
         <div style="display:flex;gap:10px;align-items:center">
             <button class="btn btn-purple" onclick="mhConnect()">Connect</button>
@@ -490,9 +490,7 @@ function unlockApp(username, role) {
     const token = localStorage.getItem('gcore_gh_token');
     if (token) document.getElementById('ghToken').value = token;
     const mhTok = localStorage.getItem('gcore_mh_token');
-    const mhSes = localStorage.getItem('gcore_mh_session');
     if (mhTok) document.getElementById('mhToken').value = mhTok;
-    if (mhSes) document.getElementById('mhSession').value = mhSes;
 }
 
 function doLogout() {
@@ -725,8 +723,7 @@ const MH_PROXY = 'https://gcore-proxy.waynerhoads2003.workers.dev/proxy/';
 
 function mhHeaders() {
     return {
-        'Authorization': localStorage.getItem('gcore_mh_token') || '',
-        'x-session-id': localStorage.getItem('gcore_mh_session') || '',
+        'Authorization': 'Bearer ' + (localStorage.getItem('gcore_mh_token') || ''),
         'Content-Type': 'application/json'
     };
 }
@@ -738,42 +735,28 @@ function mhFetch(path, opts = {}) {
 
 function mhSaveTokens() {
     const token = document.getElementById('mhToken').value.trim();
-    const session = document.getElementById('mhSession').value.trim();
-    if (!token || !session) { toast('Enter both token and session ID.', 'error'); return; }
+    if (!token) { toast('Enter your Bearer token.', 'error'); return; }
     localStorage.setItem('gcore_mh_token', token);
-    localStorage.setItem('gcore_mh_session', session);
-    toast('Tokens saved locally.');
+    toast('Token saved locally.');
 }
 
 async function mhConnect() {
     const token = document.getElementById('mhToken').value.trim() || localStorage.getItem('gcore_mh_token');
-    const session = document.getElementById('mhSession').value.trim() || localStorage.getItem('gcore_mh_session');
-    if (!token || !session) { toast('Enter your Minehut auth token and session ID.', 'error'); return; }
+    if (!token) { toast('Enter your Bearer token.', 'error'); return; }
 
     localStorage.setItem('gcore_mh_token', token);
-    localStorage.setItem('gcore_mh_session', session);
     document.getElementById('mhStatus').textContent = 'Connecting...';
     document.getElementById('mhStatus').style.color = 'var(--gold)';
 
     try {
         document.getElementById('mhStatus').textContent = 'Finding server...';
 
-        // Get server ID via proxy
-        const pubRes = await mhFetch('server/gcore?byName=true');
-        const pubText = await pubRes.text();
-        var pubData;
-        try { pubData = JSON.parse(pubText); } catch(pe) { throw new Error('Bad response: ' + pubText.substring(0, 100)); }
+        // Get server ID
+        mhServerId = '699ba8b856a201e85dc55be5';
+        document.getElementById('mhStatus').textContent = 'Loading files...';
 
-        if (pubData && pubData.server) {
-            mhServerId = pubData.server._id;
-        } else {
-            throw new Error('Could not find GCore server');
-        }
-
-        document.getElementById('mhStatus').textContent = 'Server found (' + mhServerId.substring(0, 8) + '...) Loading files...';
-
-        // File listing with auth
-        const res = await mhFetch('file/' + mhServerId + '/list');
+        // File listing with auth via v1 API
+        const res = await mhFetch('v1/server/' + mhServerId + '/files/list/');
         const fileText = await res.text();
         var data;
         try { data = JSON.parse(fileText); } catch(fe) { throw new Error('File API error: ' + fileText.substring(0, 200)); }
@@ -823,9 +806,7 @@ async function mhNavigate(path) {
     document.getElementById('mhPath').textContent = '/' + (path || '') + ' (click to go up)';
 
     try {
-        const endpoint = path
-            ? 'file/' + mhServerId + '/list/' + encodeURIComponent(path)
-            : 'file/' + mhServerId + '/list';
+        const endpoint = 'v1/server/' + mhServerId + '/files/list/' + (path ? encodeURIComponent(path) : '');
         const res = await mhFetch(endpoint);
         const data = await res.json();
         renderFileList(data.files || data || []);
@@ -848,7 +829,7 @@ async function mhOpenFile(path) {
     document.getElementById('mhCodeEditor').value = 'Loading...';
 
     try {
-        const res = await mhFetch('file/' + mhServerId + '/read/' + encodeURIComponent(path));
+        const res = await mhFetch('v1/server/' + mhServerId + '/files/read/' + encodeURIComponent(path));
         const data = await res.json();
         document.getElementById('mhCodeEditor').value = data.content || '';
     } catch (e) {
@@ -865,7 +846,7 @@ function mhSaveFile() {
     requireConfirm('Save changes to ' + mhCurrentFile + ' on the live server', async () => {
         try {
             const content = document.getElementById('mhCodeEditor').value;
-            const res = await mhFetch('file/' + mhServerId + '/edit/' + encodeURIComponent(mhCurrentFile), {
+            const res = await mhFetch('v1/server/' + mhServerId + '/files/edit/' + encodeURIComponent(mhCurrentFile), {
                 method: 'POST',
                 body: JSON.stringify({ content: content })
             });
