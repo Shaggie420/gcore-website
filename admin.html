@@ -761,11 +761,14 @@ async function mhConnect() {
         var data;
         try { data = JSON.parse(fileText); } catch(fe) { throw new Error('File API error: ' + fileText.substring(0, 200)); }
 
-        if (data.error) {
-            throw new Error('API: ' + data.error);
+        if (data.expired || data.error) {
+            throw new Error(data.message || data.error || 'Auth failed — get a fresh token');
         }
 
         document.getElementById('mhStatus').innerHTML = '<span style="color:var(--green)">✓ Connected</span>';
+
+        // Debug: show raw response keys so we know the format
+        console.log('File API response:', JSON.stringify(data).substring(0, 500));
 
         // Render the file list — handle all possible response formats
         var files = [];
@@ -773,8 +776,18 @@ async function mhConnect() {
         else if (data.files) files = data.files;
         else if (data.content) files = data.content;
         else if (data.data) files = data.data;
-        else { var k = Object.keys(data); if (k.length === 1 && Array.isArray(data[k[0]])) files = data[k[0]]; }
-        renderFileList(files);
+        else {
+            // Try every key to find the array
+            for (var k of Object.keys(data)) {
+                if (Array.isArray(data[k])) { files = data[k]; break; }
+            }
+        }
+
+        if (files.length === 0) {
+            document.getElementById('mhFileList').innerHTML = '<div style="color:var(--gold);font-size:.78rem;padding:12px;word-break:break-all">API returned: ' + JSON.stringify(data).substring(0, 300) + '</div>';
+        } else {
+            renderFileList(files);
+        }
 
     } catch (e) {
         document.getElementById('mhStatus').innerHTML = '<span style="color:var(--red)">✗ ' + e.message + '</span>';
