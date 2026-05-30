@@ -318,45 +318,50 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
 </div>
 
-<!-- SFTP FILES -->
+<!-- SFTP FILES (LIVE MINEHUT FILE EDITOR) -->
 <div class="page" id="page-sftp">
-    <div class="page-title">SFTP Access</div>
-    <div class="page-sub">Connect to your Minehut server files</div>
-    <div class="card">
-        <div class="card-title">Connection Details</div>
+    <div class="page-title">Server File Editor</div>
+    <div class="page-sub">Browse and edit your Minehut server files live</div>
+    <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Minehut API Connection</div>
+        <p style="color:var(--text3);font-size:.82rem;margin-bottom:12px">To get your tokens: Log into <a href="https://minehut.com/dashboard" target="_blank" style="color:var(--purple-light)">minehut.com/dashboard</a> → Press F12 → Application tab → Local Storage → minehut.com → Copy <strong>minehut_auth_token</strong> and <strong>minehut_session_id</strong></p>
         <div class="form-row">
-            <div class="form-group"><label class="form-label">Host</label><input type="text" class="form-input" id="sftpHost" placeholder="na.minehut.com" value="na.minehut.com"></div>
-            <div class="form-group"><label class="form-label">Port</label><input type="text" class="form-input" id="sftpPort" placeholder="22" value="22"></div>
+            <div class="form-group"><label class="form-label">Auth Token</label><input type="password" class="form-input" id="mhToken" placeholder="Paste minehut_auth_token"></div>
+            <div class="form-group"><label class="form-label">Session ID</label><input type="password" class="form-input" id="mhSession" placeholder="Paste minehut_session_id"></div>
         </div>
-        <div class="form-row">
-            <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="sftpUser" placeholder="Minehut username"></div>
-            <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="sftpPass" placeholder="Minehut password"></div>
-        </div>
-        <div style="margin-top:8px;display:flex;gap:10px;align-items:center">
-            <button class="btn btn-purple" onclick="saveSftp()">Save Connection</button>
-            <button class="btn btn-ghost" onclick="window.open('https://minehut.com/dashboard','_blank')">Open Minehut Panel</button>
-            <span style="color:var(--text3);font-size:.8rem">SFTP requires a desktop client like FileZilla or WinSCP — credentials are saved here for quick reference.</span>
+        <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn btn-purple" onclick="mhConnect()">Connect</button>
+            <button class="btn btn-ghost" onclick="mhSaveTokens()">Save Tokens</button>
+            <span id="mhStatus" style="font-size:.82rem;color:var(--text3)">Not connected</span>
         </div>
     </div>
-    <div class="card">
-        <div class="card-title">Quick Copy</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div style="background:var(--surface2);border-radius:8px;padding:14px;cursor:pointer" onclick="copyText(document.getElementById('sftpHost').value)">
-                <div style="font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Host</div>
-                <div style="font-size:.92rem;margin-top:4px" id="copyHost">na.minehut.com</div>
+    <div style="display:flex;gap:16px" id="mhEditorWrap" style="display:none">
+        <div style="width:260px;flex-shrink:0">
+            <div class="card" style="padding:12px;max-height:600px;overflow-y:auto">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                    <div style="font-size:.75rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Server Files</div>
+                    <button class="btn btn-ghost btn-sm" onclick="mhNavigate('')" style="padding:3px 8px;font-size:.7rem">Root</button>
+                </div>
+                <div id="mhPath" style="font-size:.75rem;color:var(--purple-light);margin-bottom:8px;word-break:break-all;cursor:pointer" onclick="mhGoUp()">/ (click to go up)</div>
+                <div id="mhFileList" style="display:flex;flex-direction:column;gap:2px">
+                    <div style="text-align:center;padding:20px;color:var(--text3);font-size:.82rem">Connect to browse files</div>
+                </div>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:14px;cursor:pointer" onclick="copyText(document.getElementById('sftpPort').value)">
-                <div style="font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Port</div>
-                <div style="font-size:.92rem;margin-top:4px">22</div>
+        </div>
+        <div style="flex:1">
+            <div class="card" style="padding:16px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                    <div style="font-size:.88rem;font-weight:600">Editing: <span id="mhEditingFile" style="color:var(--purple-light)">No file selected</span></div>
+                    <div style="display:flex;gap:8px">
+                        <button class="btn btn-ghost btn-sm" onclick="mhReloadFile()">Reload</button>
+                        <button class="btn btn-green btn-sm" onclick="mhSaveFile()">Save to Server</button>
+                    </div>
+                </div>
+                <textarea class="form-textarea" id="mhCodeEditor" style="min-height:500px;font-family:'Courier New',monospace;font-size:.82rem;tab-size:4;line-height:1.5" placeholder="Select a file from the tree to start editing..." spellcheck="false"></textarea>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:14px;cursor:pointer" onclick="copyText(document.getElementById('sftpUser').value)">
-                <div style="font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Username</div>
-                <div style="font-size:.92rem;margin-top:4px" id="copyUser">-</div>
-            </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:14px;cursor:pointer" onclick="copyText(document.getElementById('sftpPass').value)">
-                <div style="font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Password</div>
-                <div style="font-size:.92rem;margin-top:4px">••••••• (click to copy)</div>
-            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 </div>
@@ -484,11 +489,10 @@ function unlockApp(username, role) {
 
     const token = localStorage.getItem('gcore_gh_token');
     if (token) document.getElementById('ghToken').value = token;
-    const sftp = JSON.parse(localStorage.getItem('gcore_sftp') || '{}');
-    if (sftp.host) document.getElementById('sftpHost').value = sftp.host;
-    if (sftp.port) document.getElementById('sftpPort').value = sftp.port;
-    if (sftp.user) { document.getElementById('sftpUser').value = sftp.user; document.getElementById('copyUser').textContent = sftp.user; }
-    if (sftp.pass) document.getElementById('sftpPass').value = sftp.pass;
+    const mhTok = localStorage.getItem('gcore_mh_token');
+    const mhSes = localStorage.getItem('gcore_mh_session');
+    if (mhTok) document.getElementById('mhToken').value = mhTok;
+    if (mhSes) document.getElementById('mhSession').value = mhSes;
 }
 
 function doLogout() {
@@ -712,19 +716,159 @@ function saveFile() {
 }
 
 /* ============================================================
-   SFTP (Save credentials for reference)
+   MINEHUT FILE EDITOR (Live API)
    ============================================================ */
-function saveSftp() {
-    requireConfirm('Save SFTP connection details', () => {
-        const data = {
-            host: document.getElementById('sftpHost').value,
-            port: document.getElementById('sftpPort').value,
-            user: document.getElementById('sftpUser').value,
-            pass: document.getElementById('sftpPass').value
-        };
-        localStorage.setItem('gcore_sftp', JSON.stringify(data));
-        document.getElementById('copyUser').textContent = data.user;
-        toast('SFTP details saved.');
+let mhServerId = '';
+let mhCurrentPath = '';
+let mhCurrentFile = '';
+const MH_API = 'https://api.minehut.com';
+const CORS_PROXY = 'https://corsproxy.io/?';
+
+function mhHeaders() {
+    return {
+        'Authorization': localStorage.getItem('gcore_mh_token') || '',
+        'x-session-id': localStorage.getItem('gcore_mh_session') || '',
+        'Content-Type': 'application/json'
+    };
+}
+
+function mhFetch(url, opts = {}) {
+    opts.headers = { ...mhHeaders(), ...(opts.headers || {}) };
+    return fetch(CORS_PROXY + encodeURIComponent(url), opts);
+}
+
+function mhSaveTokens() {
+    const token = document.getElementById('mhToken').value.trim();
+    const session = document.getElementById('mhSession').value.trim();
+    if (!token || !session) { toast('Enter both token and session ID.', 'error'); return; }
+    localStorage.setItem('gcore_mh_token', token);
+    localStorage.setItem('gcore_mh_session', session);
+    toast('Tokens saved locally.');
+}
+
+async function mhConnect() {
+    const token = document.getElementById('mhToken').value.trim() || localStorage.getItem('gcore_mh_token');
+    const session = document.getElementById('mhSession').value.trim() || localStorage.getItem('gcore_mh_session');
+    if (!token || !session) { toast('Enter your Minehut auth token and session ID.', 'error'); return; }
+
+    localStorage.setItem('gcore_mh_token', token);
+    localStorage.setItem('gcore_mh_session', session);
+    document.getElementById('mhStatus').textContent = 'Connecting...';
+    document.getElementById('mhStatus').style.color = 'var(--gold)';
+
+    try {
+        // Get server list to find GCore's server ID
+        const res = await mhFetch(MH_API + '/servers/me');
+        const data = await res.json();
+
+        if (!data || !data.servers || data.servers.length === 0) {
+            // Try alternate endpoint
+            const res2 = await mhFetch(MH_API + '/server/gcore?byName=true');
+            const data2 = await res2.json();
+            if (data2 && data2.server) {
+                mhServerId = data2.server._id;
+            } else {
+                throw new Error('Could not find server');
+            }
+        } else {
+            mhServerId = data.servers[0]._id;
+        }
+
+        document.getElementById('mhStatus').textContent = 'Connected! Server ID: ' + mhServerId.substring(0, 8) + '...';
+        document.getElementById('mhStatus').style.color = 'var(--green)';
+        mhNavigate('');
+    } catch (e) {
+        document.getElementById('mhStatus').textContent = 'Failed: ' + e.message;
+        document.getElementById('mhStatus').style.color = 'var(--red)';
+    }
+}
+
+async function mhNavigate(path) {
+    if (!mhServerId) { toast('Connect first!', 'error'); return; }
+    mhCurrentPath = path;
+    document.getElementById('mhPath').textContent = '/' + (path || '') + ' (click to go up)';
+
+    try {
+        const url = path
+            ? MH_API + '/file/' + mhServerId + '/list/' + encodeURIComponent(path)
+            : MH_API + '/file/' + mhServerId + '/list';
+        const res = await mhFetch(url);
+        const data = await res.json();
+        const files = data.files || data || [];
+
+        const list = document.getElementById('mhFileList');
+        if (files.length === 0) {
+            list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:.82rem">Empty directory</div>';
+            return;
+        }
+
+        // Sort: directories first, then files
+        const dirs = files.filter(f => f.directory);
+        const regulars = files.filter(f => !f.directory);
+        dirs.sort((a, b) => a.name.localeCompare(b.name));
+        regulars.sort((a, b) => a.name.localeCompare(b.name));
+
+        list.innerHTML = [...dirs, ...regulars].map(f => {
+            const fullPath = path ? path + '/' + f.name : f.name;
+            if (f.directory) {
+                return '<div class="file-item" onclick="mhNavigate(\'' + fullPath.replace(/'/g, "\\'") + '\')" style="display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:.84rem;color:var(--text2);transition:background .15s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'transparent\'">' +
+                    '<span style="color:var(--gold)">📁</span> ' + f.name + '</div>';
+            } else {
+                const ext = f.name.split('.').pop();
+                const icon = ext === 'sk' ? '📜' : ext === 'yml' ? '⚙' : ext === 'json' ? '📋' : ext === 'properties' ? '🔧' : '📄';
+                return '<div class="file-item" onclick="mhOpenFile(\'' + fullPath.replace(/'/g, "\\'") + '\')" style="display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:.84rem;color:var(--text2);transition:background .15s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'transparent\'">' +
+                    '<span>' + icon + '</span> ' + f.name + '</div>';
+            }
+        }).join('');
+    } catch (e) {
+        document.getElementById('mhFileList').innerHTML = '<div style="color:var(--red);font-size:.82rem;padding:12px">Error: ' + e.message + '</div>';
+    }
+}
+
+function mhGoUp() {
+    if (!mhCurrentPath) return;
+    const parts = mhCurrentPath.split('/');
+    parts.pop();
+    mhNavigate(parts.join('/'));
+}
+
+async function mhOpenFile(path) {
+    if (!mhServerId) return;
+    mhCurrentFile = path;
+    document.getElementById('mhEditingFile').textContent = path;
+    document.getElementById('mhCodeEditor').value = 'Loading...';
+
+    try {
+        const res = await mhFetch(MH_API + '/file/' + mhServerId + '/read/' + encodeURIComponent(path));
+        const data = await res.json();
+        document.getElementById('mhCodeEditor').value = data.content || '';
+    } catch (e) {
+        document.getElementById('mhCodeEditor').value = '// Error loading file: ' + e.message;
+    }
+}
+
+function mhReloadFile() {
+    if (mhCurrentFile) mhOpenFile(mhCurrentFile);
+}
+
+function mhSaveFile() {
+    if (!mhCurrentFile) { toast('No file open!', 'error'); return; }
+    requireConfirm('Save changes to ' + mhCurrentFile + ' on the live server', async () => {
+        try {
+            const content = document.getElementById('mhCodeEditor').value;
+            const res = await mhFetch(MH_API + '/file/' + mhServerId + '/edit/' + encodeURIComponent(mhCurrentFile), {
+                method: 'POST',
+                body: JSON.stringify({ content: content })
+            });
+            if (res.ok) {
+                toast('Saved to server: ' + mhCurrentFile);
+            } else {
+                const err = await res.json();
+                toast('Save failed: ' + (err.error || res.status), 'error');
+            }
+        } catch (e) {
+            toast('Save error: ' + e.message, 'error');
+        }
     });
 }
 
