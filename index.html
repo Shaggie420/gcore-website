@@ -1157,31 +1157,43 @@
     }
     advanceLoader(30);
 
-    // Fetch live server stats from Minehut API
-    fetch('https://api.minehut.com/server/gcore?byName=true')
-        .then(r => r.json())
-        .then(data => {
-            advanceLoader(80);
-            const s = data.server;
-            const isOnline = s.online === true;
-            document.getElementById('statStatus').innerHTML = '<span class="status-dot ' + (isOnline ? 'online' : 'offline') + '"></span>' + (isOnline ? 'Online' : 'Offline');
-            document.getElementById('statPlayers').textContent = isOnline ? s.playerCount.toLocaleString() : '0';
-            document.getElementById('statMax').textContent = (s.maxPlayers || 500).toLocaleString();
-            document.getElementById('statJoins').textContent = (s.joins || 0).toLocaleString();
-            // Update the hero badge
-            const badge = document.querySelector('.hero-badge');
-            if (badge) {
-                const dot = badge.querySelector('.dot');
-                if (isOnline) { dot.style.background = '#4ade80'; badge.innerHTML = '<span class="dot" style="background:#4ade80;animation:pulse-dot 2s infinite;width:8px;height:8px;border-radius:50%"></span> ' + s.playerCount + ' Playing Now on Minehut'; }
-                else { dot.style.background = '#f87171'; badge.innerHTML = '<span class="dot" style="background:#f87171;width:8px;height:8px;border-radius:50%"></span> Currently Offline'; }
-            }
-            setTimeout(() => { advanceLoader(100); setTimeout(() => loader.classList.add('done'), 300); }, 400);
-        })
-        .catch(() => {
-            document.getElementById('statStatus').innerHTML = '<span class="status-dot offline"></span>Unknown';
-            advanceLoader(100);
-            setTimeout(() => loader.classList.add('done'), 500);
-        });
+    // Fetch live server stats from Minehut API (reusable, auto-refreshes)
+    let firstLoad = true;
+    function fetchServerStats() {
+        fetch('https://api.minehut.com/server/gcore?byName=true')
+            .then(r => r.json())
+            .then(data => {
+                const s = data.server;
+                const isOnline = s.online === true;
+                document.getElementById('statStatus').innerHTML = '<span class="status-dot ' + (isOnline ? 'online' : 'offline') + '"></span>' + (isOnline ? 'Online' : 'Offline');
+                document.getElementById('statPlayers').textContent = isOnline ? s.playerCount.toLocaleString() : '0';
+                document.getElementById('statMax').textContent = (s.maxPlayers || 500).toLocaleString();
+                document.getElementById('statJoins').textContent = (s.joins || 0).toLocaleString();
+                // Update the hero badge
+                const badge = document.querySelector('.hero-badge');
+                if (badge) {
+                    if (isOnline) { badge.innerHTML = '<span class="dot" style="background:#4ade80;animation:pulse-dot 2s infinite;width:8px;height:8px;border-radius:50%"></span> ' + s.playerCount + ' Playing Now on Minehut'; }
+                    else { badge.innerHTML = '<span class="dot" style="background:#f87171;width:8px;height:8px;border-radius:50%"></span> Currently Offline'; }
+                }
+                if (firstLoad) {
+                    firstLoad = false;
+                    advanceLoader(80);
+                    setTimeout(() => { advanceLoader(100); setTimeout(() => loader.classList.add('done'), 300); }, 400);
+                }
+            })
+            .catch(() => {
+                if (firstLoad) {
+                    firstLoad = false;
+                    document.getElementById('statStatus').innerHTML = '<span class="status-dot offline"></span>Unknown';
+                    advanceLoader(100);
+                    setTimeout(() => loader.classList.add('done'), 500);
+                }
+            });
+    }
+
+    // Initial fetch + refresh every 30 seconds
+    fetchServerStats();
+    setInterval(fetchServerStats, 30000);
 
     // Fallback: remove loader after 4s max
     setTimeout(() => { if (!loader.classList.contains('done')) { advanceLoader(100); setTimeout(() => loader.classList.add('done'), 300); } }, 4000);

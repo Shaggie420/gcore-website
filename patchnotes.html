@@ -163,19 +163,136 @@
         <div class="patch-date">May 29, 2026</div>
     </div>
 
-    <div class="patch-empty" id="patch-placeholder">
-        <div class="icon">&#128220;</div>
-        <p>Patch notes will be revealed at launch.</p>
-    </div>
-
-    <!-- PATCH NOTES GO HERE — uncomment and fill when ready
-    <div class="patch-category" id="patch-content" style="display:none">
-        <h3><span class="icon">&#9889;</span> New Features</h3>
+    <div class="patch-category">
+        <h3><span class="icon">&#9881;</span> Generator Engine (Complete Rewrite)</h3>
         <ul>
-            <li><span class="bullet">&#9656;</span> Example patch note here</li>
+            <li><span class="bullet">&#9656;</span> Generator spawning, mutations, drops, selling, and upgrades now handled by the native GCore Java plugin for vastly improved performance.</li>
+            <li><span class="bullet">&#9656;</span> New <strong>/sell</strong> command replaces the old sell-block system. Sells all gen drops in your inventory with a clean receipt showing multiplier, XP, and progress.</li>
+            <li><span class="bullet">&#9656;</span> <strong>Offline Earnings Engine</strong> added. Players with 10+ placed gens earn 50% of their online income for up to 24 hours while offline.</li>
+            <li><span class="bullet">&#9656;</span> 60 generator tiers (30 money + 30 token forges) with smooth level-up token scaling.</li>
         </ul>
     </div>
-    -->
+
+    <div class="patch-category">
+        <h3><span class="icon">&#127793;</span> Farming Overhaul</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> <strong>68 walk-through crops</strong> with MMO-style progression. Flowers, mushrooms, fungi, and more scale from Wheat at Prestige 0 to endgame crops at Prestige 500+.</li>
+            <li><span class="bullet">&#9656;</span> New Crop Leaderboard with massive hologram display.</li>
+            <li><span class="bullet">&#9656;</span> Farmer's Lunchbox now grants <strong>+1 Hoe XP</strong> on use.</li>
+            <li><span class="bullet">&#9656;</span> Harvest animations replaced with a lag-free system.</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#128062;</span> Pets &amp; Eggs</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> All eggs now use <strong>vanilla dragon eggs</strong> with correct per-tier colors and incubation time lore. No more all-pink eggs.</li>
+            <li><span class="bullet">&#9656;</span> Pet abilities rebalanced across the board (new key types, gen drops, and essence rewards for multiple pets).</li>
+            <li><span class="bullet">&#9656;</span> Sneak-to-pickup safety lock added to prevent accidental egg collection.</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#128176;</span> Economy &amp; Shops</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> <strong>In-Game Credit Shop</strong> added (<strong>/buy</strong>). Full virtual currency system with dynamic sales engine, rainbow border animation, and Discord purchase logging.</li>
+            <li><span class="bullet">&#9656;</span> <strong>The Nexus</strong> shop hub redesigned with live wallet display and cleaner tab navigation.</li>
+            <li><span class="bullet">&#9656;</span> Token Enchant Shop rebalanced. Gen slot pricing is now exponential. Multiplier values nerfed to +0.01/+0.02/+0.05x with daily cap.</li>
+            <li><span class="bullet">&#9656;</span> Grand Market rebuilt with flat item lists and top-tab navigation (no more nested folders).</li>
+            <li><span class="bullet">&#9656;</span> <strong>Banknote system</strong> added. Withdraw money into tradeable paper items with <strong>/banknote</strong>.</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#128081;</span> Prestige &amp; Rebirth</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> Prestige GUI split into Main + Shop. Level requirement is now <strong>linear (+5 per prestige)</strong> instead of escalating tiers.</li>
+            <li><span class="bullet">&#9656;</span> Prestige rewards rebalanced: Relics replaced with <strong>Genslots</strong> and <strong>Prestige Points</strong>. Streak, pity, and milestone info displayed.</li>
+            <li><span class="bullet">&#9656;</span> Rebirth GUI split into Main + Shop. Farm Yield and Mine Fortune skills removed.</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#128273;</span> Crate Keys &amp; Loot Boxes</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> Crate system completely rewritten with actionbar roll animations, strict rewards, and multi-open support.</li>
+            <li><span class="bullet">&#9656;</span> Keys now use proper type mapping. Keys from weather events and admin abuse <strong>stack correctly</strong> with keys from crates and shops.</li>
+            <li><span class="bullet">&#9656;</span> All loot boxes rebalanced for the stabilized economy. Eco, multiplier, and genslot ranges tightened across Core Box, Premium Core, Mini Box, and Maxi Box.</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#9876;</span> PvP &amp; Combat</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> <strong>Mace weapon class</strong> added to the Armory with Density enchants, purchasable with Essence across all armory tiers.</li>
+            <li><span class="bullet">&#9656;</span> Paintball game mode and gun system removed (to be reworked in a future update).</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#127774;</span> Weather &amp; Admin Abuse</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> Weather panel simplified to single-page Cataclysms only. Ambient weather automation removed.</li>
+            <li><span class="bullet">&#9656;</span> Weather egg drops now display correct per-type colors and incubation lore.</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#9935;</span> Private Mines</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> All ore prices rebalanced for the new economy (Coal Ore: 10 &rarr; 5, Diamond Ore: 250 &rarr; 100, Netherite: 5,000 &rarr; 1,500).</li>
+            <li><span class="bullet">&#9656;</span> Rain enchant block prices added (Iron/Gold/Diamond/Emerald blocks).</li>
+            <li><span class="bullet">&#9656;</span> Forger Dan shop now features progressive unlock (items lock behind Prestige/Level/Mine Tier).</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#127942;</span> Ranks &amp; Daily/Monthly Rewards</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> All ranks now display premium hex gradient names and emoji chat tags.</li>
+            <li><span class="bullet">&#9656;</span> Generator rewards synced to the new tier config (e.g. "Silica Gen" instead of "Legendary Stone").</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#128490;</span> Chat &amp; Social</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> <strong>Math Reaction Games</strong> added to chat. Random math problems appear; first correct answer wins 5K-15K tokens + a chance at Credits.</li>
+            <li><span class="bullet">&#9656;</span> All gameplay tags upgraded to premium hex gradients (Farmer, Fisher, Miner, Collector).</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#127918;</span> Events &amp; Minigames</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> <strong>The Great Pollen Event</strong> added: A seasonal bee event with AI bees, floor mechanics, and a dedicated leaderboard.</li>
+            <li><span class="bullet">&#9656;</span> Parkour engine made <strong>fully client-sided</strong>. Multiple players can now run parkour simultaneously with per-player fake blocks.</li>
+            <li><span class="bullet">&#9656;</span> Easter Egg Hunt now gives <strong>+1 Gen Slot</strong> per egg found. Entity-based click detection replaces the old block-based system.</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#128736;</span> Quality of Life</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> New player starter kit rebalanced: 7 Tier 1 gens + 1 Common Egg.</li>
+            <li><span class="bullet">&#9656;</span> Leaderboard expanded from 6 to 10 pages. Page 1 changed to Richest Players (Vault balance).</li>
+            <li><span class="bullet">&#9656;</span> Reputation cost reduced from $10M to $100K per point.</li>
+            <li><span class="bullet">&#9656;</span> <strong>/help</strong> tutorial rewards changed from Relics to escalating key types (farmer &rarr; genesis).</li>
+            <li><span class="bullet">&#9656;</span> Fishing system now grants XP from selling fish. Ice pond progression steeper (1.5x &rarr; 1.8x scaling).</li>
+            <li><span class="bullet">&#9656;</span> <strong>Nuclear Reset</strong> admin commands added for complete player or server-wide wipes.</li>
+        </ul>
+    </div>
+
+    <div class="patch-category">
+        <h3><span class="icon">&#128295;</span> Bug Fixes</h3>
+        <ul>
+            <li><span class="bullet">&#9656;</span> Fixed weather-dropped eggs all appearing pink instead of their correct rarity color.</li>
+            <li><span class="bullet">&#9656;</span> Fixed crate keys from weather events and admin abuse not stacking with keys from other sources.</li>
+            <li><span class="bullet">&#9656;</span> Fixed note condenser auto-condensing inside custom GUIs (now only triggers in chests, hoppers, barrels, droppers, dispensers).</li>
+            <li><span class="bullet">&#9656;</span> Fixed egg hunt stats hologram overlapping or disappearing on rejoin.</li>
+            <li><span class="bullet">&#9656;</span> Fixed parkour blocks being shared between players causing visual conflicts.</li>
+        </ul>
+    </div>
 </section>
 
 <script>
