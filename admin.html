@@ -721,7 +721,7 @@ function saveFile() {
 let mhServerId = '';
 let mhCurrentPath = '';
 let mhCurrentFile = '';
-const MH_API = 'https://api.minehut.com';
+const MH_PROXY = 'https://gcore-proxy.waynerhoads2003.workers.dev/proxy/';
 
 function mhHeaders() {
     return {
@@ -731,27 +731,9 @@ function mhHeaders() {
     };
 }
 
-async function mhFetch(url, opts = {}) {
+function mhFetch(path, opts = {}) {
     opts.headers = { ...mhHeaders(), ...(opts.headers || {}) };
-    // Try direct first, then CORS proxies as fallback
-    try {
-        const res = await fetch(url, opts);
-        return res;
-    } catch(e) {
-        // CORS blocked — try proxies
-        const proxies = [
-            'https://corsproxy.io/?url=',
-            'https://api.allorigins.win/raw?url=',
-            'https://api.codetabs.com/v1/proxy?quest='
-        ];
-        for (const proxy of proxies) {
-            try {
-                const res = await fetch(proxy + encodeURIComponent(url), opts);
-                if (res.ok || res.status < 500) return res;
-            } catch(e2) { continue; }
-        }
-        throw new Error('All connection methods failed. CORS is blocking access.');
-    }
+    return fetch(MH_PROXY + path, opts);
 }
 
 function mhSaveTokens() {
@@ -776,8 +758,8 @@ async function mhConnect() {
     try {
         document.getElementById('mhStatus').textContent = 'Finding server...';
 
-        // First get server ID from public endpoint (no auth needed)
-        const pubRes = await fetch(MH_API + '/server/gcore?byName=true');
+        // Get server ID via proxy
+        const pubRes = await mhFetch('server/gcore?byName=true');
         const pubData = await pubRes.json();
 
         if (pubData && pubData.server) {
@@ -788,9 +770,8 @@ async function mhConnect() {
 
         document.getElementById('mhStatus').textContent = 'Server found! Loading files...';
 
-        // Now try file listing with auth
-        const url = MH_API + '/file/' + mhServerId + '/list';
-        const res = await mhFetch(url);
+        // File listing with auth
+        const res = await mhFetch('file/' + mhServerId + '/list');
         const data = await res.json();
 
         if (data.error) {
@@ -842,10 +823,10 @@ async function mhNavigate(path) {
     document.getElementById('mhPath').textContent = '/' + (path || '') + ' (click to go up)';
 
     try {
-        const url = path
-            ? MH_API + '/file/' + mhServerId + '/list/' + encodeURIComponent(path)
-            : MH_API + '/file/' + mhServerId + '/list';
-        const res = await mhFetch(url);
+        const endpoint = path
+            ? 'file/' + mhServerId + '/list/' + encodeURIComponent(path)
+            : 'file/' + mhServerId + '/list';
+        const res = await mhFetch(endpoint);
         const data = await res.json();
         renderFileList(data.files || data || []);
     } catch (e) {
@@ -867,7 +848,7 @@ async function mhOpenFile(path) {
     document.getElementById('mhCodeEditor').value = 'Loading...';
 
     try {
-        const res = await mhFetch(MH_API + '/file/' + mhServerId + '/read/' + encodeURIComponent(path));
+        const res = await mhFetch('file/' + mhServerId + '/read/' + encodeURIComponent(path));
         const data = await res.json();
         document.getElementById('mhCodeEditor').value = data.content || '';
     } catch (e) {
@@ -884,7 +865,7 @@ function mhSaveFile() {
     requireConfirm('Save changes to ' + mhCurrentFile + ' on the live server', async () => {
         try {
             const content = document.getElementById('mhCodeEditor').value;
-            const res = await mhFetch(MH_API + '/file/' + mhServerId + '/edit/' + encodeURIComponent(mhCurrentFile), {
+            const res = await mhFetch('file/' + mhServerId + '/edit/' + encodeURIComponent(mhCurrentFile), {
                 method: 'POST',
                 body: JSON.stringify({ content: content })
             });
