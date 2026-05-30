@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCore - Web Tycoon</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--s1:#12121a;--s2:#1a1a26;--border:rgba(255,255,255,.07);--purple:#a463d6;--pl:#cd8cff;--green:#4ade80;--gold:#ffd700;--text:#f0f0f5;--t2:#8a8a9a;--t3:#5a5a6a}
+html,body{height:100%}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;display:flex;flex-direction:column}
+
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:rgba(10,10,15,.9);border-bottom:1px solid var(--border);z-index:10}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.2rem;background:linear-gradient(135deg,var(--pl),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
+.hud{display:flex;gap:18px;align-items:center}
+.hud-item{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
+.hud-item .v{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem}
+.hud-item .l{font-size:.62rem;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
+.v-money{color:var(--green)} .v-tok{color:var(--gold)} .v-tier{color:var(--pl)}
+.home-link{color:var(--t2);text-decoration:none;font-size:.82rem;font-weight:600;padding:6px 12px;border:1px solid var(--border);border-radius:7px}
+.home-link:hover{color:var(--text);border-color:var(--purple)}
+
+.stage{flex:1;position:relative;overflow:hidden}
+#game{display:block;width:100%;height:100%}
+
+.panel{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(18,18,26,.95);border:1px solid var(--border);border-radius:14px;padding:14px 18px;display:flex;gap:12px;align-items:center;backdrop-filter:blur(10px);z-index:5}
+.up-btn{background:var(--purple);border:none;color:#fff;padding:12px 22px;border-radius:10px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap}
+.up-btn:hover:not(:disabled){background:#7b3fad}
+.up-btn:disabled{opacity:.4;cursor:not-allowed}
+.up-info{font-size:.78rem;color:var(--t2);line-height:1.4}
+.up-info b{color:var(--text)}
+
+.hint{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(18,18,26,.9);border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:.8rem;color:var(--t2);z-index:5;text-align:center}
+.hint b{color:var(--pl)}
+
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 20px;font-size:.85rem;opacity:0;transition:all .3s;z-index:20;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.gold{border-color:rgba(255,215,0,.4);color:var(--gold)}
+.toast.green{border-color:rgba(74,222,128,.4);color:var(--green)}
+
+.mobile-controls{position:absolute;bottom:90px;right:20px;display:none;z-index:5}
+.dpad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);gap:4px}
+.dpad button{background:rgba(18,18,26,.9);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1.2rem;cursor:pointer}
+.dpad button:active{background:var(--purple)}
+.dp-up{grid-column:2;grid-row:1}.dp-left{grid-column:1;grid-row:2}.dp-right{grid-column:3;grid-row:2}.dp-down{grid-column:2;grid-row:3}
+@media(max-width:768px){.mobile-controls{display:block}.panel{flex-direction:column;gap:8px;left:16px;transform:none;width:auto}}
+</style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">GCORE</a>
+    <div class="hud">
+        <div class="hud-item"><span class="v v-money" id="hudMoney">$0</span><span class="l">Balance</span></div>
+        <div class="hud-item"><span class="v v-tok" id="hudTok">0</span><span class="l">Tokens</span></div>
+        <div class="hud-item"><span class="v v-tier" id="hudTier">Tier 1</span><span class="l">Generator</span></div>
+        <a href="index.html" class="home-link">Exit</a>
+    </div>
+</header>
+
+<div class="stage">
+    <canvas id="game"></canvas>
+    <div class="hint">Use <b>WASD</b> or <b>Arrow Keys</b> to move. Walk over <b>drops</b> to collect them!</div>
+    <div class="panel">
+        <div class="up-info" id="upInfo">Generator Tier 1<br><b>$5</b> per drop</div>
+        <button class="up-btn" id="upBtn" onclick="upgradeGen()">Upgrade — $50</button>
+        <button class="up-btn" id="sellBtn" onclick="prestige()" style="background:var(--s2);border:1px solid var(--border)">Prestige</button>
+    </div>
+    <div class="mobile-controls">
+        <div class="dpad">
+            <button class="dp-up" ontouchstart="keys['w']=1" ontouchend="keys['w']=0">▲</button>
+            <button class="dp-left" ontouchstart="keys['a']=1" ontouchend="keys['a']=0">◀</button>
+            <button class="dp-right" ontouchstart="keys['d']=1" ontouchend="keys['d']=0">▶</button>
+            <button class="dp-down" ontouchstart="keys['s']=1" ontouchend="keys['s']=0">▼</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   GCORE WEB TYCOON — generator minigame prototype
+   ============================================================ */
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+let W, H;
+function resize(){ W = cv.width = cv.clientWidth; H = cv.height = cv.clientHeight; }
+window.addEventListener('resize', resize); resize();
+
+// ---- Tier config (mirrors the MC server vibe) ----
+const TIERS = [
+  {name:'Carbon Gen',  value:5,        interval:2200, color:'#5a5a6a', up:50},
+  {name:'Scrap Gen',   value:25,       interval:2000, color:'#8a8a9a', up:300},
+  {name:'Wire Gen',    value:120,      interval:1800, color:'#cd8cff', up:1500},
+  {name:'Bullion Gen', value:600,      interval:1600, color:'#ffd700', up:8000},
+  {name:'Mana Gen',    value:3000,     interval:1400, color:'#4ade80', up:40000},
+  {name:'Flux Gen',    value:15000,    interval:1200, color:'#22d3ee', up:200000},
+  {name:'Jade Gen',    value:75000,    interval:1000, color:'#00ffaa', up:1000000},
+  {name:'Reactor Gen', value:400000,   interval:850,  color:'#ff5555', up:6000000},
+  {name:'Silica Gen',  value:2200000,  interval:700,  color:'#ff00ee', up:30000000},
+  {name:'Amber Gen',   value:12000000, interval:550,  color:'#ffaa00', up:0}
+];
+
+// ---- State ----
+let S = JSON.parse(localStorage.getItem('gcore_game') || 'null') || {
+  money:0, tokens:0, tier:0, prestige:0
+};
+function save(){ localStorage.setItem('gcore_game', JSON.stringify(S)); }
+
+// ---- World ----
+const TILE = 64;
+const PLOT = {x:0, y:0, w:9, h:7}; // in tiles
+const gen = {tx:4, ty:3};         // generator tile position (center)
+const player = {x:4*TILE, y:5*TILE, size:30, speed:4};
+const keys = {};
+let drops = [];   // {x,y,value,born}
+let particles = [];
+let lastSpawn = 0;
+let camX=0, camY=0;
+
+window.addEventListener('keydown', e=>{ keys[e.key.toLowerCase()]=1; if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase()))e.preventDefault(); });
+window.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()]=0; });
+
+function fmt(n){
+  if(n>=1e12)return (n/1e12).toFixed(2)+'T';
+  if(n>=1e9)return (n/1e9).toFixed(2)+'B';
+  if(n>=1e6)return (n/1e6).toFixed(2)+'M';
+  if(n>=1e3)return (n/1e3).toFixed(1)+'K';
+  return Math.floor(n).toString();
+}
+function toast(msg, cls=''){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show '+cls; clearTimeout(t._t); t._t=setTimeout(()=>t.className='toast',1600); }
+
+function updateHUD(){
+  document.getElementById('hudMoney').textContent = '$'+fmt(S.money);
+  document.getElementById('hudTok').textContent = fmt(S.tokens);
+  document.getElementById('hudTier').textContent = 'Tier '+(S.tier+1);
+  const t = TIERS[S.tier];
+  document.getElementById('upInfo').innerHTML = t.name + '<br><b>$'+fmt(t.value)+'</b> per drop';
+  const up = document.getElementById('upBtn');
+  if(t.up===0){ up.textContent='MAX TIER'; up.disabled=true; }
+  else { up.textContent='Upgrade — $'+fmt(t.up); up.disabled = S.money < t.up; }
+}
+
+function upgradeGen(){
+  const t = TIERS[S.tier];
+  if(t.up===0) return;
+  if(S.money < t.up){ toast('Not enough money!','');return; }
+  S.money -= t.up; S.tier++; save(); updateHUD();
+  toast('Upgraded to '+TIERS[S.tier].name+'!','green');
+  for(let i=0;i<24;i++) spawnParticle(gen.tx*TILE+TILE/2, gen.ty*TILE+TILE/2, TIERS[S.tier].color);
+}
+
+function prestige(){
+  const earned = Math.floor(Math.sqrt(S.money/1000));
+  if(earned < 1){ toast('Need more money to prestige (earn tokens)','');return; }
+  if(!confirm('Prestige now? Resets money & generator to Tier 1 but you gain '+earned+' Tokens (permanent).')) return;
+  S.tokens += earned; S.prestige++; S.money=0; S.tier=0; save(); updateHUD();
+  toast('Prestiged! +'+earned+' Tokens','gold');
+}
+
+function spawnParticle(x,y,color){ particles.push({x,y,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4-2,life:30,color}); }
+
+function spawnDrop(){
+  const t = TIERS[S.tier];
+  // token bonus multiplier
+  const mult = 1 + S.tokens*0.05;
+  drops.push({ x: gen.tx*TILE+TILE/2, y: gen.ty*TILE+TILE/2, value: Math.floor(t.value*mult), born: performance.now(), vy:-3, settled:false, ox:(Math.random()-.5)*30 });
+}
+
+function update(dt, now){
+  // movement
+  let dx=0, dy=0;
+  if(keys['w']||keys['arrowup'])dy-=1;
+  if(keys['s']||keys['arrowdown'])dy+=1;
+  if(keys['a']||keys['arrowleft'])dx-=1;
+  if(keys['d']||keys['arrowright'])dx+=1;
+  if(dx&&dy){dx*=.707;dy*=.707;}
+  player.x += dx*player.speed; player.y += dy*player.speed;
+  // clamp to plot
+  player.x = Math.max(player.size/2, Math.min(PLOT.w*TILE-player.size/2, player.x));
+  player.y = Math.max(player.size/2, Math.min(PLOT.h*TILE-player.size/2, player.y));
+
+  // camera centers on player
+  camX = player.x - W/2; camY = player.y - H/2;
+
+  // spawn drops
+  if(now - lastSpawn > TIERS[S.tier].interval){ lastSpawn = now; spawnDrop(); }
+
+  // drop physics + pickup
+  for(let i=drops.length-1;i>=0;i--){
+    const d = drops[i];
+    if(!d.settled){ d.y += d.vy; d.vy += 0.25; if(d.vy>0 && d.y >= gen.ty*TILE+TILE/2){ d.settled=true; d.y=gen.ty*TILE+TILE/2; } }
+    const ddx = (d.x+d.ox)-player.x, ddy=d.y-player.y;
+    if(Math.hypot(ddx,ddy) < player.size){
+      S.money += d.value;
+      for(let p=0;p<6;p++) spawnParticle(d.x+d.ox,d.y,'#4ade80');
+      drops.splice(i,1);
+      updateHUD();
+    } else if(now - d.born > 30000){ drops.splice(i,1); } // despawn old
+  }
+  // cap drops so screen doesn't flood
+  if(drops.length > 40) drops.splice(0, drops.length-40);
+
+  // particles
+  for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.x+=p.vx;p.y+=p.vy;p.vy+=.15;p.life--; if(p.life<=0)particles.splice(i,1); }
+}
+
+function drawTile(tx,ty){
+  const x = tx*TILE - camX, y = ty*TILE - camY;
+  ctx.fillStyle = (tx+ty)%2===0 ? '#15151f' : '#181824';
+  ctx.fillRect(x,y,TILE,TILE);
+  ctx.strokeStyle='rgba(164,99,214,.06)'; ctx.strokeRect(x,y,TILE,TILE);
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  // plot floor
+  for(let ty=0;ty<PLOT.h;ty++) for(let tx=0;tx<PLOT.w;tx++) drawTile(tx,ty);
+  // plot border glow
+  ctx.strokeStyle='rgba(164,99,214,.3)'; ctx.lineWidth=3;
+  ctx.strokeRect(-camX, -camY, PLOT.w*TILE, PLOT.h*TILE); ctx.lineWidth=1;
+
+  // generator block (isometric-ish cube)
+  const gx = gen.tx*TILE - camX, gy = gen.ty*TILE - camY;
+  const t = TIERS[S.tier];
+  const pulse = 1 + Math.sin(performance.now()/300)*0.04;
+  const sz = TILE*0.8*pulse, ox=(TILE-sz)/2;
+  // shadow
+  ctx.fillStyle='rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(gx+TILE/2, gy+TILE*0.92, sz/2, sz/6, 0,0,7); ctx.fill();
+  // top
+  ctx.fillStyle = t.color;
+  ctx.fillRect(gx+ox, gy+ox-6, sz, sz);
+  // shading
+  const grad = ctx.createLinearGradient(gx,gy,gx,gy+sz);
+  grad.addColorStop(0,'rgba(255,255,255,.25)'); grad.addColorStop(1,'rgba(0,0,0,.35)');
+  ctx.fillStyle=grad; ctx.fillRect(gx+ox, gy+ox-6, sz, sz);
+  // label
+  ctx.fillStyle='#fff'; ctx.font='bold 11px Space Grotesk, sans-serif'; ctx.textAlign='center';
+  ctx.fillText(t.name, gx+TILE/2, gy-10);
+
+  // drops
+  for(const d of drops){
+    const x=d.x+d.ox-camX, y=d.y-camY;
+    ctx.fillStyle='rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x,y+10,10,4,0,0,7); ctx.fill();
+    ctx.fillStyle=t.color; ctx.strokeStyle='#fff'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(x,y,9,0,7); ctx.fill(); ctx.stroke(); ctx.lineWidth=1;
+    ctx.fillStyle='#fff'; ctx.font='bold 9px Inter'; ctx.fillText('$', x, y+3);
+  }
+
+  // particles
+  for(const p of particles){ ctx.globalAlpha=p.life/30; ctx.fillStyle=p.color; ctx.fillRect(p.x-camX-2,p.y-camY-2,4,4); ctx.globalAlpha=1; }
+
+  // player
+  const px=player.x-camX, py=player.y-camY;
+  ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(px,py+player.size/2,player.size/2,player.size/5,0,0,7); ctx.fill();
+  ctx.fillStyle=(Math.floor(performance.now()/120)%2 && (keys['w']||keys['a']||keys['s']||keys['d']||keys['arrowup']||keys['arrowdown']||keys['arrowleft']||keys['arrowright']))?'#cd8cff':'#a463d6';
+  ctx.beginPath(); ctx.roundRect(px-player.size/2, py-player.size/2, player.size, player.size, 7); ctx.fill();
+  // eyes
+  ctx.fillStyle='#fff'; ctx.fillRect(px-7,py-6,5,7); ctx.fillRect(px+2,py-6,5,7);
+  ctx.fillStyle='#12121a'; ctx.fillRect(px-5,py-3,3,4); ctx.fillRect(px+4,py-3,3,4);
+}
+
+let last=performance.now();
+function loop(now){ const dt=now-last; last=now; update(dt,now); render(); requestAnimationFrame(loop); }
+updateHUD(); requestAnimationFrame(loop);
+setInterval(save, 5000);
+</script>
+</body>
+</html>

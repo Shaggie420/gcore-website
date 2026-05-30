@@ -189,6 +189,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         <span>SFTP Files</span>
     </a>
+    <a class="sidebar-link" onclick="showPage('console')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        <span>Console</span>
+    </a>
     <div class="sidebar-label">Settings</div>
     <a class="sidebar-link" onclick="showPage('settings')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -363,6 +367,36 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
 </div>
         </div>
+    </div>
+</div>
+
+<!-- CONSOLE -->
+<div class="page" id="page-console">
+    <div class="page-title">Server Console</div>
+    <div class="page-sub">Send commands and view live console output</div>
+
+    <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Quick Actions</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-purple" onclick="mhSendCommand('sk reload all')">🔁 Reload All Skripts</button>
+            <button class="btn btn-ghost" onclick="mhSendCommand('reload confirm')">Reload Server</button>
+            <button class="btn btn-ghost" onclick="consoleRefresh()">Refresh Console</button>
+            <button class="btn btn-ghost" onclick="toggleAutoConsole()" id="autoConsoleBtn">Auto-Refresh: OFF</button>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Send Command</div>
+        <div style="display:flex;gap:10px">
+            <span style="color:var(--purple-light);font-family:'Courier New',monospace;font-size:1.1rem;align-self:center">/</span>
+            <input type="text" class="form-input" id="cmdInput" placeholder="say Hello from the website!" style="flex:1;font-family:'Courier New',monospace" onkeydown="if(event.key==='Enter')mhSendCommandFromInput()">
+            <button class="btn btn-green" onclick="mhSendCommandFromInput()">Send</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><span class="dot" style="background:var(--green)"></span> Live Console <span style="color:var(--text3);font-size:.75rem;font-weight:400;margin-left:8px">(reads logs/latest.log)</span></div>
+        <pre id="consoleOutput" style="background:#000;border:1px solid var(--border);border-radius:8px;padding:16px;height:480px;overflow-y:auto;font-family:'Courier New',monospace;font-size:.78rem;line-height:1.5;color:#b8b8c8;white-space:pre-wrap;word-break:break-word;margin:0">Connect via SFTP Files first, then click Refresh Console.</pre>
     </div>
 </div>
 
@@ -899,6 +933,74 @@ function mhSaveFile() {
             toast('Save error: ' + e.message, 'error');
         }
     });
+}
+
+/* ============================================================
+   SERVER CONSOLE & COMMANDS
+   ============================================================ */
+let autoConsoleTimer = null;
+
+async function mhSendCommand(cmd) {
+    if (!mhServerId) { toast('Connect via SFTP Files first!', 'error'); return; }
+    if (!cmd) return;
+    try {
+        const res = await mhFetch('server/' + mhServerId + '/send_command', {
+            method: 'POST',
+            body: JSON.stringify({ command: cmd })
+        });
+        if (res.ok) {
+            toast('Sent: /' + cmd);
+            // Pull fresh console output a moment later so they see the result
+            setTimeout(consoleRefresh, 1200);
+        } else {
+            const t = await res.text();
+            toast('Command failed: ' + t.substring(0, 80), 'error');
+        }
+    } catch (e) {
+        toast('Command error: ' + e.message, 'error');
+    }
+}
+
+function mhSendCommandFromInput() {
+    const input = document.getElementById('cmdInput');
+    const cmd = input.value.trim();
+    if (!cmd) return;
+    mhSendCommand(cmd);
+    input.value = '';
+}
+
+async function consoleRefresh() {
+    if (!mhServerId) {
+        document.getElementById('consoleOutput').textContent = 'Connect via SFTP Files first (paste your token there and click Connect).';
+        return;
+    }
+    try {
+        const res = await mhFetch('file/' + mhServerId + '/read/logs/latest.log');
+        const data = await res.json();
+        var content = data.content || data.message || '';
+        if (!content) { content = JSON.stringify(data).substring(0, 300); }
+        // Show only the last ~400 lines so it stays snappy
+        var lines = content.split('\n');
+        if (lines.length > 400) lines = lines.slice(lines.length - 400);
+        const out = document.getElementById('consoleOutput');
+        out.textContent = lines.join('\n');
+        out.scrollTop = out.scrollHeight;
+    } catch (e) {
+        document.getElementById('consoleOutput').textContent = 'Could not read console: ' + e.message;
+    }
+}
+
+function toggleAutoConsole() {
+    const btn = document.getElementById('autoConsoleBtn');
+    if (autoConsoleTimer) {
+        clearInterval(autoConsoleTimer);
+        autoConsoleTimer = null;
+        btn.textContent = 'Auto-Refresh: OFF';
+    } else {
+        consoleRefresh();
+        autoConsoleTimer = setInterval(consoleRefresh, 4000);
+        btn.textContent = 'Auto-Refresh: ON';
+    }
 }
 
 /* ============================================================
