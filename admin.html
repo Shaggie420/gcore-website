@@ -741,10 +741,13 @@ function mhSaveTokens() {
 }
 
 async function mhConnect() {
-    const token = document.getElementById('mhToken').value.trim() || localStorage.getItem('gcore_mh_token');
+    var token = document.getElementById('mhToken').value.trim() || localStorage.getItem('gcore_mh_token');
     if (!token) { toast('Enter your Bearer token.', 'error'); return; }
-
+    // Strip "Bearer " prefix if user pasted it
+    token = token.replace(/^Bearer\s+/i, '').trim();
     localStorage.setItem('gcore_mh_token', token);
+    // Update the input field too
+    document.getElementById('mhToken').value = token;
     document.getElementById('mhStatus').textContent = 'Connecting...';
     document.getElementById('mhStatus').style.color = 'var(--gold)';
 
