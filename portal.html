@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCore - Player Portal</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--s1:#12121a;--s2:#1a1a26;--s3:#22222e;--border:rgba(255,255,255,.06);--purple:#a463d6;--pl:#cd8cff;--pg:rgba(164,99,214,.3);--green:#4ade80;--red:#f87171;--gold:#ffd700;--blue:#60a5fa;--cyan:#22d3ee;--text:#f0f0f5;--t2:#8a8a9a;--t3:#5a5a6a;--r:12px}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* BG */
+.bg-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(164,99,214,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(164,99,214,.02) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+
+/* NAV */
+header{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.nav{max-width:1100px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,var(--pl),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none}
+.nav-links{display:flex;gap:24px;align-items:center}
+.nav-links a{color:var(--t2);text-decoration:none;font-size:.85rem;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.nav-btn{background:var(--purple);color:#fff !important;padding:8px 18px;border-radius:8px;font-weight:600;transition:background .2s}
+.nav-btn:hover{background:#7b3fad}
+
+/* CONTENT */
+.wrap{max-width:1100px;margin:0 auto;padding:88px 24px 60px;position:relative;z-index:1}
+
+/* AUTH FORMS */
+.auth-page{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 64px);padding-top:64px}
+.auth-box{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:440px;max-width:92vw}
+.auth-box h1{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:800;background:linear-gradient(135deg,var(--pl),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.auth-box .sub{color:var(--t3);font-size:.85rem;margin-bottom:28px}
+.auth-box .swap{text-align:center;margin-top:20px;font-size:.85rem;color:var(--t3)}
+.auth-box .swap a{color:var(--pl);cursor:pointer;text-decoration:none;font-weight:600}
+.inp{width:100%;padding:12px 16px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.9rem;outline:none;font-family:inherit;transition:border-color .2s;margin-bottom:12px}
+.inp:focus{border-color:var(--purple)}
+.inp-label{display:block;font-size:.75rem;font-weight:600;color:var(--t2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.abtn{width:100%;padding:13px;background:var(--purple);border:none;border-radius:var(--r);color:#fff;font-size:.92rem;font-weight:600;cursor:pointer;transition:background .2s;font-family:inherit;margin-top:4px}
+.abtn:hover{background:#7b3fad}
+.auth-err{color:var(--red);font-size:.82rem;margin-top:10px;min-height:18px;text-align:center}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--t3);font-size:.78rem}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* DASHBOARD */
+.dash{display:none}
+.dash.active{display:block}
+
+.profile-header{display:flex;align-items:center;gap:20px;margin-bottom:32px;padding:28px;background:var(--s1);border:1px solid var(--border);border-radius:16px}
+.avatar{width:72px;height:72px;border-radius:12px;background:var(--s2);border:2px solid var(--purple);overflow:hidden}
+.avatar img{width:100%;height:100%;image-rendering:pixelated}
+.profile-info h2{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700}
+.profile-info .rank{font-size:.8rem;font-weight:600;color:var(--gold)}
+.profile-info .linked{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;margin-top:4px;padding:3px 10px;border-radius:100px}
+.linked.yes{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.2)}
+.linked.no{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.15)}
+
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.scard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;transition:border-color .3s}
+.scard:hover{border-color:rgba(164,99,214,.25)}
+.scard .num{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700}
+.scard .lbl{font-size:.7rem;color:var(--t3);margin-top:2px;text-transform:uppercase;letter-spacing:1px}
+.num-purple{color:var(--pl)}
+.num-green{color:var(--green)}
+.num-gold{color:var(--gold)}
+.num-blue{color:var(--blue)}
+.num-cyan{color:var(--cyan)}
+.num-red{color:var(--red)}
+
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:20px}
+.card-t{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.card-t .dot{width:8px;height:8px;border-radius:50%}
+
+.link-box{display:flex;gap:10px;align-items:end}
+.link-box .inp{margin-bottom:0;flex:1;font-family:'Space Grotesk',monospace;font-size:1.1rem;letter-spacing:4px;text-align:center;text-transform:uppercase}
+.link-btn{padding:12px 24px;background:var(--green);border:none;border-radius:var(--r);color:#000;font-size:.88rem;font-weight:700;cursor:pointer;transition:background .2s;font-family:inherit;white-space:nowrap}
+.link-btn:hover{background:#22c55e}
+
+.reward-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.reward{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;transition:border-color .3s}
+.reward:hover{border-color:rgba(164,99,214,.3)}
+.reward .icon{font-size:1.6rem;margin-bottom:8px}
+.reward .name{font-size:.85rem;font-weight:600;margin-bottom:2px}
+.reward .desc{font-size:.75rem;color:var(--t3)}
+.reward.claimed{opacity:.5;pointer-events:none}
+.reward.claimed .name::after{content:' ✓';color:var(--green)}
+
+/* PROGRESS BARS */
+.prog-wrap{margin-bottom:14px}
+.prog-label{display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:5px}
+.prog-label span:first-child{color:var(--t2);font-weight:600}
+.prog-label span:last-child{color:var(--t3)}
+.prog-bar{height:6px;background:var(--s3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.prog-purple{background:linear-gradient(90deg,var(--purple),var(--pl))}
+.prog-green{background:linear-gradient(90deg,#22c55e,var(--green))}
+.prog-gold{background:linear-gradient(90deg,#d4a017,var(--gold))}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.tab{padding:10px 20px;font-size:.85rem;font-weight:600;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:var(--t2)}
+.tab.active{color:var(--pl);border-bottom-color:var(--purple)}
+.tab-page{display:none}
+.tab-page.active{display:block}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:14px 24px;font-size:.88rem;z-index:9999;transform:translateY(100px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:rgba(74,222,128,.3);color:var(--green)}
+.toast.err{border-color:rgba(248,113,113,.3);color:var(--red)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+.stat-grid{grid-template-columns:1fr 1fr}
+.reward-grid{grid-template-columns:1fr}
+.profile-header{flex-direction:column;text-align:center}
+.link-box{flex-direction:column}
+.nav-links a:not(.nav-btn){display:none}
+}
+@media(max-width:480px){
+.stat-grid{grid-template-columns:1fr}
+.auth-box{padding:32px 24px}
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<header>
+<div class="nav">
+    <a href="index.html" class="logo">GCORE</a>
+    <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="patchnotes.html">Patch Notes</a>
+        <a href="#" id="navAuth" class="nav-btn" onclick="showAuth()">Sign In</a>
+    </div>
+</div>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<!-- ====== AUTH: REGISTER ====== -->
+<div class="auth-page" id="authRegister" style="display:none">
+<div class="auth-box">
+    <h1>Create Account</h1>
+    <p class="sub">Join the GCore community and track your stats</p>
+    <label class="inp-label">Username</label>
+    <input type="text" class="inp" id="regUser" placeholder="Pick a username" autocomplete="off" maxlength="20">
+    <label class="inp-label">Email</label>
+    <input type="email" class="inp" id="regEmail" placeholder="your@email.com" autocomplete="off">
+    <label class="inp-label">Password</label>
+    <input type="password" class="inp" id="regPass" placeholder="Min 6 characters">
+    <label class="inp-label">Confirm Password</label>
+    <input type="password" class="inp" id="regPass2" placeholder="Re-enter password">
+    <button class="abtn" onclick="doRegister()">Create Account</button>
+    <div class="auth-err" id="regErr"></div>
+    <div class="swap">Already have an account? <a onclick="flipAuth('login')">Sign In</a></div>
+</div>
+</div>
+
+<!-- ====== AUTH: LOGIN ====== -->
+<div class="auth-page" id="authLogin" style="display:none">
+<div class="auth-box">
+    <h1>Welcome Back</h1>
+    <p class="sub">Sign in to view your stats and rewards</p>
+    <label class="inp-label">Username or Email</label>
+    <input type="text" class="inp" id="logUser" placeholder="Username or email" autocomplete="off">
+    <label class="inp-label">Password</label>
+    <input type="password" class="inp" id="logPass" placeholder="Your password">
+    <button class="abtn" onclick="doLogin()">Sign In</button>
+    <div class="auth-err" id="logErr"></div>
+    <div class="swap">Don't have an account? <a onclick="flipAuth('register')">Create one</a></div>
+</div>
+</div>
+
+<!-- ====== DASHBOARD ====== -->
+<div class="dash" id="dashboard">
+<div class="wrap">
+
+<!-- PROFILE HEADER -->
+<div class="profile-header">
+    <div class="avatar"><img id="mcHead" src="https://mc-heads.net/avatar/Steve/72" alt="head"></div>
+    <div class="profile-info">
+        <h2 id="dashUser">Player</h2>
+        <div class="rank" id="dashRank">Member</div>
+        <div class="linked no" id="dashLinked">⚠ Minecraft not linked</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+        <button style="padding:8px 16px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--t2);font-size:.82rem;cursor:pointer;font-family:inherit" onclick="doLogout()">Sign Out</button>
+    </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+    <div class="tab active" onclick="showTab('overview')">Overview</div>
+    <div class="tab" onclick="showTab('link')">Link Account</div>
+    <div class="tab" onclick="showTab('rewards')">Rewards</div>
+    <div class="tab" onclick="showTab('leaderboard')">Leaderboards</div>
+</div>
+
+<!-- TAB: OVERVIEW -->
+<div class="tab-page active" id="tab-overview">
+<div class="stat-grid">
+    <div class="scard"><div class="num num-green" id="s-bal">$0</div><div class="lbl">Balance</div></div>
+    <div class="scard"><div class="num num-gold" id="s-tok">0</div><div class="lbl">Tokens</div></div>
+    <div class="scard"><div class="num num-purple" id="s-pres">0</div><div class="lbl">Prestige</div></div>
+    <div class="scard"><div class="num num-blue" id="s-rb">0</div><div class="lbl">Rebirths</div></div>
+</div>
+<div class="stat-grid">
+    <div class="scard"><div class="num num-cyan" id="s-gens">0</div><div class="lbl">Generators</div></div>
+    <div class="scard"><div class="num num-green" id="s-pets">0</div><div class="lbl">Pets</div></div>
+    <div class="scard"><div class="num num-gold" id="s-crops">0</div><div class="lbl">Crops Farmed</div></div>
+    <div class="scard"><div class="num num-red" id="s-kills">0</div><div class="lbl">PvP Kills</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+<div class="card">
+    <div class="card-t">Progression</div>
+    <div class="prog-wrap">
+        <div class="prog-label"><span>Level</span><span id="p-lvl">1 / 100</span></div>
+        <div class="prog-bar"><div class="prog-fill prog-purple" id="p-lvl-bar" style="width:1%"></div></div>
+    </div>
+    <div class="prog-wrap">
+        <div class="prog-label"><span>Hoe XP</span><span id="p-hoe">0</span></div>
+        <div class="prog-bar"><div class="prog-fill prog-green" id="p-hoe-bar" style="width:0%"></div></div>
+    </div>
+    <div class="prog-wrap">
+        <div class="prog-label"><span>Fishing Level</span><span id="p-fish">1</span></div>
+        <div class="prog-bar"><div class="prog-fill prog-gold" id="p-fish-bar" style="width:1%"></div></div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-t">Recent Activity</div>
+    <div id="activityFeed" style="font-size:.85rem;color:var(--t2)">
+        <div style="padding:8px 0;border-bottom:1px solid var(--border)">🔗 Link your MC account to see activity</div>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- TAB: LINK ACCOUNT -->
+<div class="tab-page" id="tab-link">
+<div class="card">
+    <div class="card-t"><span class="dot" style="background:var(--gold)"></span> Link Your Minecraft Account</div>
+    <p style="color:var(--t2);font-size:.9rem;margin-bottom:20px">Run <span style="color:var(--pl);font-weight:600;font-family:'Space Grotesk',monospace">/linksite</span> in-game to get a 6-digit code. Enter it below to link your accounts and unlock free rewards!</p>
+    <div class="link-box">
+        <div style="flex:1">
+            <label class="inp-label">Link Code</label>
+            <input type="text" class="inp" id="linkCode" placeholder="A B C D E F" maxlength="6" autocomplete="off" style="margin-bottom:0;font-size:1.2rem;letter-spacing:6px;text-align:center;text-transform:uppercase">
+        </div>
+        <button class="link-btn" onclick="submitLink()">Link Account</button>
+    </div>
+    <div class="auth-err" id="linkErr" style="text-align:left"></div>
+</div>
+<div class="card">
+    <div class="card-t">How It Works</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div style="text-align:center;padding:16px">
+            <div style="font-size:2rem;margin-bottom:8px">1️⃣</div>
+            <div style="font-size:.88rem;font-weight:600;margin-bottom:4px">Run /linksite</div>
+            <div style="font-size:.78rem;color:var(--t3)">Type the command in-game to get your unique code</div>
+        </div>
+        <div style="text-align:center;padding:16px">
+            <div style="font-size:2rem;margin-bottom:8px">2️⃣</div>
+            <div style="font-size:.88rem;font-weight:600;margin-bottom:4px">Enter Code</div>
+            <div style="font-size:.78rem;color:var(--t3)">Paste your 6-digit code in the box above</div>
+        </div>
+        <div style="text-align:center;padding:16px">
+            <div style="font-size:2rem;margin-bottom:8px">3️⃣</div>
+            <div style="font-size:.88rem;font-weight:600;margin-bottom:4px">Get Rewards</div>
+            <div style="font-size:.78rem;color:var(--t3)">Claim free tokens, keys, and gen slots!</div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- TAB: REWARDS -->
+<div class="tab-page" id="tab-rewards">
+<div class="card">
+    <div class="card-t"><span class="dot" style="background:var(--green)"></span> Link Rewards</div>
+    <p style="color:var(--t2);font-size:.88rem;margin-bottom:16px">Link your MC account to claim these free rewards in-game:</p>
+    <div class="reward-grid" id="rewardGrid">
+        <div class="reward" id="rw-tokens"><div class="icon">🪙</div><div class="name">25,000 Tokens</div><div class="desc">Instant token boost</div></div>
+        <div class="reward" id="rw-keys"><div class="icon">🗝️</div><div class="name">5x Genesis Keys</div><div class="desc">Crate keys for free</div></div>
+        <div class="reward" id="rw-slots"><div class="icon">⚡</div><div class="name">+10 Gen Slots</div><div class="desc">Expand your empire</div></div>
+        <div class="reward" id="rw-egg"><div class="icon">🥚</div><div class="name">1x Rare Pet Egg</div><div class="desc">Hatch a rare companion</div></div>
+        <div class="reward" id="rw-eco"><div class="icon">💰</div><div class="name">$50M Eco</div><div class="desc">Cash injection</div></div>
+        <div class="reward" id="rw-tag"><div class="icon">🏷️</div><div class="name">Website Tag</div><div class="desc">Exclusive chat tag in-game</div></div>
+    </div>
+</div>
+</div>
+
+<!-- TAB: LEADERBOARDS -->
+<div class="tab-page" id="tab-leaderboard">
+<div class="card">
+    <div class="card-t"><span class="dot" style="background:var(--gold)"></span> Top Players</div>
+    <p style="color:var(--t2);font-size:.85rem;margin-bottom:16px">Leaderboard data syncs from the server. Link your account to appear here.</p>
+    <div class="tabs" style="border:none;margin-bottom:12px">
+        <div class="tab active" onclick="showLB('balance')" style="font-size:.78rem;padding:6px 14px">Balance</div>
+        <div class="tab" onclick="showLB('tokens')" style="font-size:.78rem;padding:6px 14px">Tokens</div>
+        <div class="tab" onclick="showLB('prestige')" style="font-size:.78rem;padding:6px 14px">Prestige</div>
+        <div class="tab" onclick="showLB('kills')" style="font-size:.78rem;padding:6px 14px">PvP Kills</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse" id="lbTable">
+        <thead><tr>
+            <th style="text-align:left;padding:10px 16px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);border-bottom:1px solid var(--border)">#</th>
+            <th style="text-align:left;padding:10px 16px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);border-bottom:1px solid var(--border)">Player</th>
+            <th style="text-align:right;padding:10px 16px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);border-bottom:1px solid var(--border)">Value</th>
+        </tr></thead>
+        <tbody id="lbBody"></tbody>
+    </table>
+    <div style="text-align:center;padding:20px;color:var(--t3);font-size:.85rem" id="lbEmpty">Leaderboard data will populate once the server API is connected.</div>
+</div>
+</div>
+
+</div><!-- /wrap -->
+</div><!-- /dashboard -->
+
+<script>
+/* ============================================================
+   UTILS
+   ============================================================ */
+async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')}
+function toast(m,t='ok'){const e=document.getElementById('toast');e.textContent=m;e.className='toast show '+t;setTimeout(()=>e.classList.remove('show'),3000)}
+function fmt(n){if(n>=1e12)return(n/1e12).toFixed(1)+'T';if(n>=1e9)return(n/1e9).toFixed(1)+'B';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toString()}
+
+/* ============================================================
+   AUTH FLOW
+   ============================================================ */
+function showAuth(){flipAuth('login')}
+function flipAuth(mode){
+    document.getElementById('authRegister').style.display=mode==='register'?'flex':'none';
+    document.getElementById('authLogin').style.display=mode==='login'?'flex':'none';
+    document.getElementById('dashboard').classList.remove('active');
+}
+
+async function doRegister(){
+    const user=document.getElementById('regUser').value.trim();
+    const email=document.getElementById('regEmail').value.trim();
+    const pass=document.getElementById('regPass').value;
+    const pass2=document.getElementById('regPass2').value;
+    const err=document.getElementById('regErr');
+    err.textContent='';
+    if(!user||!email||!pass){err.textContent='All fields are required.';return}
+    if(user.length<3){err.textContent='Username must be at least 3 characters.';return}
+    if(pass.length<6){err.textContent='Password must be at least 6 characters.';return}
+    if(pass!==pass2){err.textContent='Passwords do not match.';return}
+    if(!email.includes('@')){err.textContent='Enter a valid email.';return}
+    const users=JSON.parse(localStorage.getItem('gcore_users')||'[]');
+    if(users.find(u=>u.user.toLowerCase()===user.toLowerCase())){err.textContent='Username already taken.';return}
+    if(users.find(u=>u.email.toLowerCase()===email.toLowerCase())){err.textContent='Email already registered.';return}
+    const hash=await sha256(pass);
+    users.push({user,email,hash,created:Date.now(),mc:null,mcName:null,rewards:[],stats:{}});
+    localStorage.setItem('gcore_users',JSON.stringify(users));
+    toast('Account created! Welcome to GCore.');
+    sessionStorage.setItem('gcore_portal_user',user);
+    enterDashboard(user);
+}
+
+async function doLogin(){
+    const input=document.getElementById('logUser').value.trim().toLowerCase();
+    const pass=document.getElementById('logPass').value;
+    const err=document.getElementById('logErr');
+    err.textContent='';
+    if(!input||!pass){err.textContent='Enter both fields.';return}
+    const hash=await sha256(pass);
+    const users=JSON.parse(localStorage.getItem('gcore_users')||'[]');
+    const found=users.find(u=>(u.user.toLowerCase()===input||u.email.toLowerCase()===input)&&u.hash===hash);
+    if(!found){err.textContent='Invalid username/email or password.';return}
+    sessionStorage.setItem('gcore_portal_user',found.user);
+    toast('Welcome back, '+found.user+'!');
+    enterDashboard(found.user);
+}
+
+function doLogout(){
+    sessionStorage.removeItem('gcore_portal_user');
+    location.reload();
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function enterDashboard(username){
+    document.getElementById('authRegister').style.display='none';
+    document.getElementById('authLogin').style.display='none';
+    document.getElementById('dashboard').classList.add('active');
+    document.getElementById('navAuth').textContent=username;
+    document.getElementById('navAuth').onclick=()=>{}; // disable sign in btn
+
+    const users=JSON.parse(localStorage.getItem('gcore_users')||'[]');
+    const u=users.find(x=>x.user===username);
+    if(!u)return;
+
+    document.getElementById('dashUser').textContent=u.user;
+
+    if(u.mcName){
+        document.getElementById('mcHead').src='https://mc-heads.net/avatar/'+u.mcName+'/72';
+        document.getElementById('dashLinked').className='linked yes';
+        document.getElementById('dashLinked').textContent='✓ Linked as '+u.mcName;
+        document.getElementById('dashRank').textContent=u.stats.rank||'Member';
+        loadStats(u);
+    } else {
+        document.getElementById('dashLinked').className='linked no';
+        document.getElementById('dashLinked').textContent='⚠ Minecraft not linked';
+    }
+
+    loadRewards(u);
+}
+
+function loadStats(u){
+    const s=u.stats||{};
+    document.getElementById('s-bal').textContent='$'+fmt(s.balance||0);
+    document.getElementById('s-tok').textContent=fmt(s.tokens||0);
+    document.getElementById('s-pres').textContent=s.prestige||0;
+    document.getElementById('s-rb').textContent=s.rebirths||0;
+    document.getElementById('s-gens').textContent=s.generators||0;
+    document.getElementById('s-pets').textContent=s.pets||0;
+    document.getElementById('s-crops').textContent=fmt(s.crops||0);
+    document.getElementById('s-kills').textContent=s.kills||0;
+
+    const lvl=s.level||1;
+    document.getElementById('p-lvl').textContent=lvl+' / 100';
+    document.getElementById('p-lvl-bar').style.width=lvl+'%';
+    const hoe=s.hoeLevel||0;
+    document.getElementById('p-hoe').textContent=hoe;
+    document.getElementById('p-hoe-bar').style.width=Math.min(hoe,100)+'%';
+    const fish=s.fishLevel||1;
+    document.getElementById('p-fish').textContent=fish;
+    document.getElementById('p-fish-bar').style.width=Math.min(fish,100)+'%';
+
+    // Mock activity
+    document.getElementById('activityFeed').innerHTML=[
+        {t:'Reached Prestige '+s.prestige,c:'var(--pl)'},
+        {t:'Collected '+fmt(s.crops||0)+' crops',c:'var(--green)'},
+        {t:fmt(s.tokens||0)+' tokens earned',c:'var(--gold)'}
+    ].map(a=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:.84rem"><span style="color:${a.c}">●</span> ${a.t}</div>`).join('');
+}
+
+/* ============================================================
+   LINK ACCOUNT
+   ============================================================ */
+function submitLink(){
+    const code=document.getElementById('linkCode').value.trim().toUpperCase();
+    const err=document.getElementById('linkErr');
+    err.textContent='';
+    if(code.length!==6){err.textContent='Enter the full 6-digit code from /linksite.';return}
+
+    // For now: mock linking. The Skript API will validate codes later.
+    // Accept any 6-char code and "link" to a MC name based on the code.
+    const username=sessionStorage.getItem('gcore_portal_user');
+    const users=JSON.parse(localStorage.getItem('gcore_users')||'[]');
+    const idx=users.findIndex(u=>u.user===username);
+    if(idx===-1)return;
+
+    // Mock: use the username as MC name for now
+    users[idx].mcName=username;
+    users[idx].mc='mock-uuid-'+code;
+    // Mock stats until API is connected
+    users[idx].stats={
+        balance:Math.floor(Math.random()*5e9),
+        tokens:Math.floor(Math.random()*500000),
+        prestige:Math.floor(Math.random()*50),
+        rebirths:Math.floor(Math.random()*5),
+        generators:Math.floor(Math.random()*60)+10,
+        pets:Math.floor(Math.random()*15),
+        crops:Math.floor(Math.random()*100000),
+        kills:Math.floor(Math.random()*200),
+        level:Math.floor(Math.random()*80)+1,
+        hoeLevel:Math.floor(Math.random()*50),
+        fishLevel:Math.floor(Math.random()*30)+1,
+        rank:'Member'
+    };
+    localStorage.setItem('gcore_users',JSON.stringify(users));
+
+    toast('Account linked! Rewards unlocked.');
+    document.getElementById('linkCode').value='';
+    enterDashboard(username);
+    showTab('rewards');
+}
+
+/* ============================================================
+   REWARDS
+   ============================================================ */
+function loadRewards(u){
+    const claimed=u.rewards||[];
+    ['rw-tokens','rw-keys','rw-slots','rw-egg','rw-eco','rw-tag'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(!el)return;
+        if(claimed.includes(id)){
+            el.classList.add('claimed');
+            el.onclick=null;
+        } else if(u.mcName){
+            el.style.cursor='pointer';
+            el.onclick=()=>claimReward(id);
+        } else {
+            el.style.opacity='.4';
+            el.style.cursor='not-allowed';
+        }
+    });
+}
+
+function claimReward(id){
+    const username=sessionStorage.getItem('gcore_portal_user');
+    const users=JSON.parse(localStorage.getItem('gcore_users')||'[]');
+    const idx=users.findIndex(u=>u.user===username);
+    if(idx===-1)return;
+    if(!users[idx].mcName){toast('Link your MC account first!','err');return}
+    if(users[idx].rewards.includes(id)){toast('Already claimed!','err');return}
+    users[idx].rewards.push(id);
+    localStorage.setItem('gcore_users',JSON.stringify(users));
+    document.getElementById(id).classList.add('claimed');
+    document.getElementById(id).onclick=null;
+
+    // The Skript will deliver rewards in-game when the API is connected
+    const names={
+        'rw-tokens':'25,000 Tokens',
+        'rw-keys':'5x Genesis Keys',
+        'rw-slots':'+10 Gen Slots',
+        'rw-egg':'1x Rare Pet Egg',
+        'rw-eco':'$50M Eco',
+        'rw-tag':'Website Chat Tag'
+    };
+    toast('Claimed: '+(names[id]||'Reward')+' — deliver in-game next login!');
+}
+
+/* ============================================================
+   LEADERBOARDS (placeholder)
+   ============================================================ */
+function showLB(type){
+    document.querySelectorAll('#tab-leaderboard .tab').forEach(t=>t.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    // Placeholder until API
+    document.getElementById('lbEmpty').textContent='Leaderboard data will populate once the server API is connected.';
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function showTab(id){
+    document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tabs > .tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-'+id).classList.add('active');
+    document.querySelector(`.tabs > .tab[onclick="showTab('${id}')"]`)?.classList.add('active');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+window.addEventListener('DOMContentLoaded',()=>{
+    const saved=sessionStorage.getItem('gcore_portal_user');
+    if(saved){
+        enterDashboard(saved);
+    }
+    // Enter key handlers
+    document.getElementById('logPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+    document.getElementById('regPass2').addEventListener('keydown',e=>{if(e.key==='Enter')doRegister()});
+    document.getElementById('linkCode').addEventListener('keydown',e=>{if(e.key==='Enter')submitLink()});
+});
+</script>
+</body>
+</html>
