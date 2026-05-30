@@ -199,6 +199,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,
     <div class="tab" onclick="showTab('link')">Link Account</div>
     <div class="tab" onclick="showTab('rewards')">Rewards</div>
     <div class="tab" onclick="showTab('leaderboard')">Leaderboards</div>
+    <div class="tab admin-only" onclick="showTab('admin-panel')" style="display:none">⚙ Admin Panel</div>
 </div>
 
 <!-- TAB: OVERVIEW -->
@@ -316,6 +317,36 @@ header{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,15,
 </div>
 </div>
 
+<!-- TAB: ADMIN PANEL -->
+<div class="tab-page" id="tab-admin-panel">
+<div class="card">
+    <div class="card-t"><span class="dot" style="background:var(--red)"></span> Admin Panel</div>
+    <p style="color:var(--t2);font-size:.9rem;margin-bottom:20px">Access server management, mod accounts, site editor, and SFTP.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <a href="admin.html" style="text-decoration:none;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;transition:border-color .3s;display:block;cursor:pointer" onmouseover="this.style.borderColor='rgba(164,99,214,.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)'">
+            <div style="font-size:1.6rem;margin-bottom:8px">👥</div>
+            <div style="font-size:.9rem;font-weight:600;color:var(--text)">Mod Accounts</div>
+            <div style="font-size:.75rem;color:var(--t3);margin-top:4px">Create & manage staff access</div>
+        </a>
+        <a href="admin.html" style="text-decoration:none;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;transition:border-color .3s;display:block;cursor:pointer" onmouseover="this.style.borderColor='rgba(164,99,214,.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)'">
+            <div style="font-size:1.6rem;margin-bottom:8px">✏️</div>
+            <div style="font-size:.9rem;font-weight:600;color:var(--text)">Site Editor</div>
+            <div style="font-size:.75rem;color:var(--t3);margin-top:4px">Edit pages on gcoremc.com</div>
+        </a>
+        <a href="admin.html" style="text-decoration:none;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;transition:border-color .3s;display:block;cursor:pointer" onmouseover="this.style.borderColor='rgba(164,99,214,.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)'">
+            <div style="font-size:1.6rem;margin-bottom:8px">📁</div>
+            <div style="font-size:.9rem;font-weight:600;color:var(--text)">SFTP Files</div>
+            <div style="font-size:.75rem;color:var(--t3);margin-top:4px">Manage server files</div>
+        </a>
+        <a href="admin.html" style="text-decoration:none;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:20px;text-align:center;transition:border-color .3s;display:block;cursor:pointer" onmouseover="this.style.borderColor='rgba(164,99,214,.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)'">
+            <div style="font-size:1.6rem;margin-bottom:8px">⚙️</div>
+            <div style="font-size:.9rem;font-weight:600;color:var(--text)">Settings</div>
+            <div style="font-size:.75rem;color:var(--t3);margin-top:4px">Panel appearance & config</div>
+        </a>
+    </div>
+</div>
+</div>
+
 </div><!-- /wrap -->
 </div><!-- /dashboard -->
 
@@ -413,6 +444,11 @@ function enterDashboard(username){
     if(!u)return;
 
     document.getElementById('dashUser').textContent=u.user;
+
+    // Show admin tab for owner
+    if(u.isOwner){
+        document.querySelectorAll('.admin-only').forEach(el=>el.style.display='');
+    }
 
     if(u.mcName){
         document.getElementById('mcHead').src='https://mc-heads.net/avatar/'+u.mcName+'/72';
