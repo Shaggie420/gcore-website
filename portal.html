@@ -553,11 +553,22 @@ window.addEventListener('DOMContentLoaded',()=>{
     const saved=sessionStorage.getItem('gcore_portal_user');
     if(saved){
         enterDashboard(saved);
+    } else {
+        // Show login form by default when not logged in
+        flipAuth('login');
     }
     // Enter key handlers
     document.getElementById('logPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
     document.getElementById('regPass2').addEventListener('keydown',e=>{if(e.key==='Enter')doRegister()});
     document.getElementById('linkCode').addEventListener('keydown',e=>{if(e.key==='Enter')submitLink()});
+
+    // Auto-create owner account if it doesn't exist
+    const OWNER_HASH='38dd4d6d6d8cba719d1971264a637177e562b6cdf43d7bd61727ae1d96348737';
+    const users=JSON.parse(localStorage.getItem('gcore_users')||'[]');
+    if(!users.find(u=>u.user==='Shaggy0302')){
+        users.push({user:'Shaggy0302',email:'owner@gcoremc.com',hash:OWNER_HASH,created:Date.now(),mc:null,mcName:null,rewards:[],stats:{},isOwner:true});
+        localStorage.setItem('gcore_users',JSON.stringify(users));
+    }
 });
 </script>
 </body>
