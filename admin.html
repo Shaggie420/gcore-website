@@ -722,7 +722,6 @@ let mhServerId = '';
 let mhCurrentPath = '';
 let mhCurrentFile = '';
 const MH_API = 'https://api.minehut.com';
-const CORS_PROXY = 'https://corsproxy.io/?';
 
 function mhHeaders() {
     return {
@@ -732,9 +731,27 @@ function mhHeaders() {
     };
 }
 
-function mhFetch(url, opts = {}) {
+async function mhFetch(url, opts = {}) {
     opts.headers = { ...mhHeaders(), ...(opts.headers || {}) };
-    return fetch(CORS_PROXY + encodeURIComponent(url), opts);
+    // Try direct first, then CORS proxies as fallback
+    try {
+        const res = await fetch(url, opts);
+        return res;
+    } catch(e) {
+        // CORS blocked — try proxies
+        const proxies = [
+            'https://corsproxy.io/?url=',
+            'https://api.allorigins.win/raw?url=',
+            'https://api.codetabs.com/v1/proxy?quest='
+        ];
+        for (const proxy of proxies) {
+            try {
+                const res = await fetch(proxy + encodeURIComponent(url), opts);
+                if (res.ok || res.status < 500) return res;
+            } catch(e2) { continue; }
+        }
+        throw new Error('All connection methods failed. CORS is blocking access.');
+    }
 }
 
 function mhSaveTokens() {
@@ -757,30 +774,66 @@ async function mhConnect() {
     document.getElementById('mhStatus').style.color = 'var(--gold)';
 
     try {
-        // Get server list to find GCore's server ID
-        const res = await mhFetch(MH_API + '/servers/me');
-        const data = await res.json();
+        document.getElementById('mhStatus').textContent = 'Finding server...';
 
-        if (!data || !data.servers || data.servers.length === 0) {
-            // Try alternate endpoint
-            const res2 = await mhFetch(MH_API + '/server/gcore?byName=true');
-            const data2 = await res2.json();
-            if (data2 && data2.server) {
-                mhServerId = data2.server._id;
-            } else {
-                throw new Error('Could not find server');
-            }
+        // First get server ID from public endpoint (no auth needed)
+        const pubRes = await fetch(MH_API + '/server/gcore?byName=true');
+        const pubData = await pubRes.json();
+
+        if (pubData && pubData.server) {
+            mhServerId = pubData.server._id;
         } else {
-            mhServerId = data.servers[0]._id;
+            throw new Error('Could not find GCore server');
         }
 
-        document.getElementById('mhStatus').textContent = 'Connected! Server ID: ' + mhServerId.substring(0, 8) + '...';
-        document.getElementById('mhStatus').style.color = 'var(--green)';
-        mhNavigate('');
+        document.getElementById('mhStatus').textContent = 'Server found! Loading files...';
+
+        // Now try file listing with auth
+        const url = MH_API + '/file/' + mhServerId + '/list';
+        const res = await mhFetch(url);
+        const data = await res.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        document.getElementById('mhStatus').innerHTML = '<span style="color:var(--green)">✓ Connected</span> — Server ID: ' + mhServerId.substring(0, 8) + '...';
+
+        // Render the file list
+        renderFileList(data.files || data || []);
+
     } catch (e) {
-        document.getElementById('mhStatus').textContent = 'Failed: ' + e.message;
-        document.getElementById('mhStatus').style.color = 'var(--red)';
+        document.getElementById('mhStatus').innerHTML = '<span style="color:var(--red)">✗ ' + e.message + '</span>';
+
+        // If CORS failed, show helpful fallback
+        if (e.message.includes('CORS') || e.message.includes('Failed to fetch') || e.message.includes('connection methods')) {
+            document.getElementById('mhStatus').innerHTML += '<br><span style="color:var(--text3);font-size:.78rem">Minehut blocks browser file access due to CORS. Use FileZilla instead:<br>Host: <strong>na.minehut.com</strong> | Port: <strong>2187</strong></span>';
+        }
     }
+}
+
+function renderFileList(files) {
+    const list = document.getElementById('mhFileList');
+    if (!files || files.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:.82rem">Empty directory</div>';
+        return;
+    }
+    const dirs = files.filter(f => f.directory);
+    const regulars = files.filter(f => !f.directory);
+    dirs.sort((a, b) => a.name.localeCompare(b.name));
+    regulars.sort((a, b) => a.name.localeCompare(b.name));
+
+    list.innerHTML = [...dirs, ...regulars].map(f => {
+        const fullPath = mhCurrentPath ? mhCurrentPath + '/' + f.name : f.name;
+        const esc = fullPath.replace(/'/g, "\\'");
+        if (f.directory) {
+            return '<div onclick="mhNavigate(\'' + esc + '\')" style="display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:.84rem;color:var(--text2);transition:background .15s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'transparent\'"><span style="color:var(--gold)">📁</span> ' + f.name + '</div>';
+        } else {
+            const ext = f.name.split('.').pop();
+            const icon = ext === 'sk' ? '📜' : ext === 'yml' ? '⚙' : ext === 'json' ? '📋' : ext === 'properties' ? '🔧' : '📄';
+            return '<div onclick="mhOpenFile(\'' + esc + '\')" style="display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:.84rem;color:var(--text2);transition:background .15s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'transparent\'"><span>' + icon + '</span> ' + f.name + '</div>';
+        }
+    }).join('');
 }
 
 async function mhNavigate(path) {
@@ -794,32 +847,7 @@ async function mhNavigate(path) {
             : MH_API + '/file/' + mhServerId + '/list';
         const res = await mhFetch(url);
         const data = await res.json();
-        const files = data.files || data || [];
-
-        const list = document.getElementById('mhFileList');
-        if (files.length === 0) {
-            list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text3);font-size:.82rem">Empty directory</div>';
-            return;
-        }
-
-        // Sort: directories first, then files
-        const dirs = files.filter(f => f.directory);
-        const regulars = files.filter(f => !f.directory);
-        dirs.sort((a, b) => a.name.localeCompare(b.name));
-        regulars.sort((a, b) => a.name.localeCompare(b.name));
-
-        list.innerHTML = [...dirs, ...regulars].map(f => {
-            const fullPath = path ? path + '/' + f.name : f.name;
-            if (f.directory) {
-                return '<div class="file-item" onclick="mhNavigate(\'' + fullPath.replace(/'/g, "\\'") + '\')" style="display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:.84rem;color:var(--text2);transition:background .15s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'transparent\'">' +
-                    '<span style="color:var(--gold)">📁</span> ' + f.name + '</div>';
-            } else {
-                const ext = f.name.split('.').pop();
-                const icon = ext === 'sk' ? '📜' : ext === 'yml' ? '⚙' : ext === 'json' ? '📋' : ext === 'properties' ? '🔧' : '📄';
-                return '<div class="file-item" onclick="mhOpenFile(\'' + fullPath.replace(/'/g, "\\'") + '\')" style="display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:6px;cursor:pointer;font-size:.84rem;color:var(--text2);transition:background .15s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'transparent\'">' +
-                    '<span>' + icon + '</span> ' + f.name + '</div>';
-            }
-        }).join('');
+        renderFileList(data.files || data || []);
     } catch (e) {
         document.getElementById('mhFileList').innerHTML = '<div style="color:var(--red);font-size:.82rem;padding:12px">Error: ' + e.message + '</div>';
     }
