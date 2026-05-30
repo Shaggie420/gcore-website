@@ -760,7 +760,9 @@ async function mhConnect() {
 
         // Get server ID via proxy
         const pubRes = await mhFetch('server/gcore?byName=true');
-        const pubData = await pubRes.json();
+        const pubText = await pubRes.text();
+        var pubData;
+        try { pubData = JSON.parse(pubText); } catch(pe) { throw new Error('Bad response: ' + pubText.substring(0, 100)); }
 
         if (pubData && pubData.server) {
             mhServerId = pubData.server._id;
@@ -768,28 +770,26 @@ async function mhConnect() {
             throw new Error('Could not find GCore server');
         }
 
-        document.getElementById('mhStatus').textContent = 'Server found! Loading files...';
+        document.getElementById('mhStatus').textContent = 'Server found (' + mhServerId.substring(0, 8) + '...) Loading files...';
 
         // File listing with auth
         const res = await mhFetch('file/' + mhServerId + '/list');
-        const data = await res.json();
+        const fileText = await res.text();
+        var data;
+        try { data = JSON.parse(fileText); } catch(fe) { throw new Error('File API error: ' + fileText.substring(0, 200)); }
 
         if (data.error) {
-            throw new Error(data.error);
+            throw new Error('API: ' + data.error);
         }
 
-        document.getElementById('mhStatus').innerHTML = '<span style="color:var(--green)">✓ Connected</span> — Server ID: ' + mhServerId.substring(0, 8) + '...';
+        document.getElementById('mhStatus').innerHTML = '<span style="color:var(--green)">✓ Connected</span>';
 
         // Render the file list
-        renderFileList(data.files || data || []);
+        var files = Array.isArray(data) ? data : (data.files || []);
+        renderFileList(files);
 
     } catch (e) {
         document.getElementById('mhStatus').innerHTML = '<span style="color:var(--red)">✗ ' + e.message + '</span>';
-
-        // If CORS failed, show helpful fallback
-        if (e.message.includes('CORS') || e.message.includes('Failed to fetch') || e.message.includes('connection methods')) {
-            document.getElementById('mhStatus').innerHTML += '<br><span style="color:var(--text3);font-size:.78rem">Minehut blocks browser file access due to CORS. Use FileZilla instead:<br>Host: <strong>na.minehut.com</strong> | Port: <strong>2187</strong></span>';
-        }
     }
 }
 
