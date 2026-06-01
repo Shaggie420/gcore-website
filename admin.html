@@ -187,7 +187,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </a>
     <a class="sidebar-link" onclick="showPage('sftp')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <span>SFTP Files</span>
+        <span>Skript Editor</span>
     </a>
     <a class="sidebar-link" onclick="showPage('console')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
@@ -227,7 +227,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn btn-purple" onclick="showPage('editor')">Edit Site Pages</button>
             <button class="btn btn-green" onclick="showPage('mods')">Manage Mods</button>
-            <button class="btn btn-ghost" onclick="showPage('sftp')">Open SFTP</button>
+            <button class="btn btn-ghost" onclick="showPage('sftp')">Open Skript Editor</button>
             <button class="btn btn-ghost" onclick="window.open('https://minehut.com/dashboard','_blank')">Minehut Panel</button>
         </div>
     </div>
@@ -324,46 +324,17 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 <!-- SFTP FILES (LIVE MINEHUT FILE EDITOR) -->
 <div class="page" id="page-sftp">
-    <div class="page-title">Server File Editor</div>
-    <div class="page-sub">Browse and edit your Minehut server files live</div>
-    <div class="card" style="margin-bottom:16px">
-        <div class="card-title">Minehut API Connection</div>
-        <p style="color:var(--text3);font-size:.82rem;margin-bottom:12px">To get your token: Log into <a href="https://app.minehut.com/dashboard/files" target="_blank" style="color:var(--purple-light)">app.minehut.com</a> → F12 → Network tab → click any request → copy the Authorization Bearer token (starts with eyJ...)</p>
-        <div class="form-group">
-            <label class="form-label">Bearer Token (starts with eyJ...)</label>
-            <input type="password" class="form-input" id="mhToken" placeholder="Paste the long eyJ... token here">
+    <div class="page-title">Skript Editor</div>
+    <div class="page-sub">Live SFTP editor for your server — browse, edit, save & reload your scripts</div>
+    <div class="card" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+            <div style="font-size:.92rem;font-weight:600;color:var(--text)"><span class="dot" style="background:var(--green)"></span> GCore Editor &middot; connected over SFTP</div>
+            <div style="font-size:.8rem;color:var(--text3);margin-top:5px"><b style="color:var(--text2)">Ctrl+S</b> saves the file &nbsp;·&nbsp; <b style="color:var(--text2)">Ctrl+Q</b> saves &amp; reloads that one script in-game</div>
         </div>
-        <div style="display:flex;gap:10px;align-items:center">
-            <button class="btn btn-purple" onclick="mhConnect()">Connect</button>
-            <button class="btn btn-ghost" onclick="mhSaveTokens()">Save Tokens</button>
-            <span id="mhStatus" style="font-size:.82rem;color:var(--text3)">Not connected</span>
-        </div>
+        <a class="btn btn-purple" href="https://gcore-editor.onrender.com/" target="_blank" rel="noopener">Open in New Tab ↗</a>
     </div>
-    <div style="display:flex;gap:16px" id="mhEditorWrap" style="display:none">
-        <div style="width:260px;flex-shrink:0">
-            <div class="card" style="padding:12px;max-height:600px;overflow-y:auto">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                    <div style="font-size:.75rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Server Files</div>
-                    <button class="btn btn-ghost btn-sm" onclick="mhNavigate('')" style="padding:3px 8px;font-size:.7rem">Root</button>
-                </div>
-                <div id="mhPath" style="font-size:.75rem;color:var(--purple-light);margin-bottom:8px;word-break:break-all;cursor:pointer" onclick="mhGoUp()">/ (click to go up)</div>
-                <div id="mhFileList" style="display:flex;flex-direction:column;gap:2px">
-                    <div style="text-align:center;padding:20px;color:var(--text3);font-size:.82rem">Connect to browse files</div>
-                </div>
-            </div>
-        </div>
-        <div style="flex:1">
-            <div class="card" style="padding:16px">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-                    <div style="font-size:.88rem;font-weight:600">Editing: <span id="mhEditingFile" style="color:var(--purple-light)">No file selected</span></div>
-                    <div style="display:flex;gap:8px">
-                        <button class="btn btn-ghost btn-sm" onclick="mhReloadFile()">Reload</button>
-                        <button class="btn btn-green btn-sm" onclick="mhSaveFile()">Save to Server</button>
-                    </div>
-                </div>
-                <textarea class="form-textarea" id="mhCodeEditor" style="min-height:500px;font-family:'Courier New',monospace;font-size:.82rem;tab-size:4;line-height:1.5" placeholder="Select a file from the tree to start editing..." spellcheck="false"></textarea>
-            </div>
-        </div>
+    <div class="card" style="padding:0;overflow:hidden;border-radius:12px">
+        <iframe src="https://gcore-editor.onrender.com/" title="GCore Editor" style="width:100%;height:78vh;border:0;display:block;background:#0d0d12"></iframe>
     </div>
 </div>
         </div>
