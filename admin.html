@@ -27,7 +27,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* ====== LAYOUT ====== */
 .app{display:none;min-height:100vh}
 .app.active{display:flex}
-.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);padding:20px 0;position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:50}
+#sbHandle{position:fixed;left:0;top:0;bottom:0;width:6px;z-index:201;background:linear-gradient(to right,#a463d6,transparent);opacity:.35;cursor:ew-resize;transition:opacity .2s}
+#sbHandle:hover{opacity:.8}
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);padding:20px 0;position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:200;transform:translateX(-240px);transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.sidebar.open{transform:translateX(0);box-shadow:4px 0 32px rgba(0,0,0,.6)}
 .sidebar-logo{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:800;padding:0 24px 20px;background:linear-gradient(135deg,var(--purple-light),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .sidebar-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);padding:16px 24px 8px}
 .sidebar-link{display:flex;align-items:center;gap:12px;padding:10px 24px;color:var(--text2);font-size:.88rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none}
@@ -38,7 +41,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .sidebar-link.active svg{opacity:1}
 .sidebar-spacer{flex:1}
 .sidebar-footer{padding:16px 24px;border-top:1px solid var(--border);font-size:.75rem;color:var(--text3)}
-.main{margin-left:240px;flex:1;padding:32px 40px;min-height:100vh}
+.main{margin-left:0;flex:1;padding:32px 40px;min-height:100vh}
 
 /* ====== PAGES ====== */
 .page{display:none}
@@ -136,10 +139,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* ====== RESPONSIVE ====== */
 @media(max-width:768px){
-.sidebar{width:60px;padding:12px 0}
-.sidebar-logo,.sidebar-label,.sidebar-link span,.sidebar-footer{display:none}
-.sidebar-link{justify-content:center;padding:12px;border-left:none}
-.main{margin-left:60px;padding:20px 16px}
+.main{padding:20px 16px}
 .stat-grid{grid-template-columns:1fr 1fr}
 .form-row{flex-direction:column}
 }
@@ -179,8 +179,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- ====== APP ====== -->
 <div class="app" id="app">
 
+<!-- SIDEBAR EDGE HANDLE -->
+<div id="sbHandle"></div>
+
 <!-- SIDEBAR -->
-<div class="sidebar">
+<div class="sidebar" id="adminSidebar">
     <div class="sidebar-logo">GCORE</div>
     <div class="sidebar-label">Overview</div>
     <a class="sidebar-link active" onclick="showPage('dashboard')">
@@ -1202,6 +1205,17 @@ function openFP(){
 function closeFP(){
     fpTimer2 = setTimeout(() => { if (!filePanelEl.matches(':hover')) filePanelEl.classList.remove('open'); }, 380);
 }
+
+/* ---- Left sidebar auto-hide ---- */
+const adminSidebar = document.getElementById('adminSidebar');
+const sbHandleEl   = document.getElementById('sbHandle');
+let sbTimer = null;
+function openSB(){ clearTimeout(sbTimer); adminSidebar.classList.add('open'); }
+function closeSB(){ sbTimer = setTimeout(() => { if (!adminSidebar.matches(':hover')) adminSidebar.classList.remove('open'); }, 380); }
+sbHandleEl.addEventListener('mouseenter', openSB);
+adminSidebar.addEventListener('mouseenter', () => clearTimeout(sbTimer));
+adminSidebar.addEventListener('mouseleave', closeSB);
+document.addEventListener('mousemove', e => { if (e.clientX <= 6) openSB(); });
 
 fpHandle.addEventListener('mouseenter', openFP);
 filePanelEl.addEventListener('mouseenter', () => clearTimeout(fpTimer2));
