@@ -429,8 +429,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             </div>
         </div>
         <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
-            <button class="btn btn-purple" onclick="mhLogin()">Connect Minehut</button>
+            <button class="btn btn-purple" id="mhLoginBtn" onclick="mhLogin()">Connect Minehut</button>
             <span id="mhLoginStatus" style="font-size:.82rem;color:var(--text3)">Not connected</span>
+        </div>
+        <div id="mhTotpRow" style="display:none;margin-top:14px">
+            <label class="form-label">Verification Code <span style="font-weight:400;text-transform:none;color:var(--text3)">(sent to your email by Minehut)</span></label>
+            <div style="display:flex;gap:10px;align-items:center">
+                <input type="text" class="form-input" id="mhTotpCode" placeholder="6-digit code" maxlength="8" style="max-width:180px;letter-spacing:4px;text-align:center" oninput="this.value=this.value.replace(/\D/g,'')">
+                <button class="btn btn-purple" onclick="mhLoginVerify()">Verify</button>
+            </div>
         </div>
     </div>
     <div class="card">
@@ -1084,20 +1091,39 @@ async function mhLogin() {
     const statusEl = document.getElementById('mhLoginStatus');
     statusEl.textContent = 'Connecting...';
     statusEl.style.color = 'var(--gold)';
+    document.getElementById('mhTotpRow').style.display = 'none';
     try {
         const r = await fetch(MH_PROXY + 'users/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password: pass })
         });
-        const data = await r.json();
-        if (!r.ok || !data.token) {
+        const text = await r.text();
+        let data;
+        try { data = JSON.parse(text); } catch(e) {
+            statusEl.textContent = '✗ Bad response';
+            statusEl.style.color = 'var(--red)';
+            toast('Login error — API returned: ' + text.slice(0, 120), 'error');
+            return;
+        }
+        // 2FA / OTT required
+        if (data.ott || data.totp || data.requiresMFA || data.require_mfa || (data.message && /2fa|mfa|verif|code/i.test(data.message))) {
+            window._mhOtt = data.ott || data.sessionId || data.session_id || '';
+            document.getElementById('mhTotpRow').style.display = 'block';
+            document.getElementById('mhTotpCode').value = '';
+            document.getElementById('mhTotpCode').focus();
+            statusEl.textContent = 'Check your email for a code';
+            statusEl.style.color = 'var(--gold)';
+            return;
+        }
+        const token = data.token || data.sessionToken || data.slgToken;
+        if (!r.ok || !token) {
             statusEl.textContent = '✗ ' + (data.message || 'Login failed');
             statusEl.style.color = 'var(--red)';
             toast('Minehut login failed: ' + (data.message || r.status), 'error');
             return;
         }
-        localStorage.setItem('gcore_mh_token', data.token);
+        localStorage.setItem('gcore_mh_token', token);
         statusEl.textContent = '✓ Connected';
         statusEl.style.color = 'var(--green)';
         toast('Minehut connected — Ctrl+Q reload is now active!');
@@ -1105,6 +1131,44 @@ async function mhLogin() {
         statusEl.textContent = '✗ Error';
         statusEl.style.color = 'var(--red)';
         toast('Login error: ' + e.message, 'error');
+    }
+}
+
+async function mhLoginVerify() {
+    const code = document.getElementById('mhTotpCode').value.trim();
+    const ott  = window._mhOtt || '';
+    if (!code) { toast('Enter the code from your email.', 'error'); return; }
+    const statusEl = document.getElementById('mhLoginStatus');
+    statusEl.textContent = 'Verifying...';
+    statusEl.style.color = 'var(--gold)';
+    try {
+        const r = await fetch(MH_PROXY + 'users/login/ott', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ott, code })
+        });
+        const text = await r.text();
+        let data;
+        try { data = JSON.parse(text); } catch(e) {
+            toast('Verify error — API returned: ' + text.slice(0, 120), 'error');
+            return;
+        }
+        const token = data.token || data.sessionToken || data.slgToken;
+        if (!r.ok || !token) {
+            statusEl.textContent = '✗ ' + (data.message || 'Verification failed');
+            statusEl.style.color = 'var(--red)';
+            toast('2FA failed: ' + (data.message || r.status), 'error');
+            return;
+        }
+        localStorage.setItem('gcore_mh_token', token);
+        document.getElementById('mhTotpRow').style.display = 'none';
+        statusEl.textContent = '✓ Connected';
+        statusEl.style.color = 'var(--green)';
+        toast('Minehut connected — Ctrl+Q reload is now active!');
+    } catch (e) {
+        statusEl.textContent = '✗ Error';
+        statusEl.style.color = 'var(--red)';
+        toast('Verify error: ' + e.message, 'error');
     }
 }
 
