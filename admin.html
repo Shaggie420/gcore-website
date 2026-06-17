@@ -419,23 +419,31 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="card">
         <div class="card-title">Minehut Connection <span style="font-size:.75rem;font-weight:400;color:var(--text3)">(needed for Ctrl+Q in-game reload)</span></div>
         <div class="form-group" style="margin-bottom:8px">
-            <label class="form-label">Session Token <span style="font-weight:400;text-transform:none;color:var(--text3)">— paste from your Minehut tab</span></label>
-            <div style="display:flex;gap:10px">
-                <input type="password" class="form-input" id="mhToken" placeholder="Paste your Minehut session token here">
-                <button class="btn btn-purple" onclick="mhConnect()">Save</button>
+            <label class="form-label">Bearer Token <span style="font-weight:400;text-transform:none;color:var(--text3)">— long JWT from Network tab → Authorization header</span></label>
+            <input type="password" class="form-input" id="mhToken" placeholder="eyJ...">
+        </div>
+        <div class="form-row" style="margin-bottom:8px">
+            <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Profile ID <span style="font-weight:400;text-transform:none;color:var(--text3)">— X-Profile-Id header</span></label>
+                <input type="text" class="form-input" id="mhProfileId" placeholder="348ea69c-...">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Session ID <span style="font-weight:400;text-transform:none;color:var(--text3)">— X-Session-Id header</span></label>
+                <input type="text" class="form-input" id="mhSessionId" placeholder="ad40af75-...">
             </div>
         </div>
-        <span id="mhLoginStatus" style="font-size:.82rem;color:var(--text3)">Not connected</span>
+        <div style="display:flex;align-items:center;gap:12px">
+            <button class="btn btn-purple" onclick="mhConnect()">Save & Connect</button>
+            <span id="mhLoginStatus" style="font-size:.82rem;color:var(--text3)">Not connected</span>
+        </div>
         <details style="margin-top:12px">
-            <summary style="font-size:.8rem;color:var(--text3);cursor:pointer;user-select:none">How to get your token</summary>
+            <summary style="font-size:.8rem;color:var(--text3);cursor:pointer;user-select:none">How to get these values</summary>
             <div style="margin-top:10px;padding:12px;background:var(--bg);border-radius:8px;font-size:.82rem;color:var(--text2);line-height:1.7">
-                1. Go to your <b>Minehut tab</b> (you're already logged in there)<br>
-                2. Press <b>F12</b> to open DevTools<br>
-                3. Click the <b>Console</b> tab<br>
-                4. Paste this and press Enter:<br>
-                <code id="mhCopyCmd" style="display:block;margin:8px 0;padding:8px;background:var(--surface2);border-radius:6px;font-size:.78rem;word-break:break-all;cursor:pointer" onclick="navigator.clipboard.writeText(this.textContent).then(()=>toast('Copied!'))" title="Click to copy">copy(localStorage.getItem('slg_user_token'))</code>
-                5. It copies your token automatically — paste it in the field above<br>
-                <span style="color:var(--text3);font-size:.76rem">(Click the command above to copy it)</span>
+                1. Go to your <b>Minehut tab</b> → press <b>F12</b> → click <b>Network</b> tab<br>
+                2. Type <code style="background:var(--surface2);padding:2px 6px;border-radius:4px">api.minehut</code> in the filter box<br>
+                3. Click any <b>all_data</b> GET request → <b>Headers</b> tab → scroll to <b>Request Headers</b><br>
+                4. Copy each value: <b>Authorization</b> (long JWT), <b>X-Profile-Id</b>, <b>X-Session-Id</b><br>
+                <span style="color:var(--text3);font-size:.76rem">Tip: right-click a header value → Copy value</span>
             </div>
         </details>
     </div>
@@ -594,6 +602,10 @@ function unlockApp(username, role) {
         const s = document.getElementById('mhLoginStatus');
         s.textContent = '✓ Connected';
         s.style.color = 'var(--green)';
+        const mhP = document.getElementById('mhProfileId');
+        const mhS = document.getElementById('mhSessionId');
+        if (mhP) mhP.value = localStorage.getItem('gcore_mh_profile') || '';
+        if (mhS) mhS.value = localStorage.getItem('gcore_mh_session') || '';
     }
 }
 
@@ -843,11 +855,14 @@ function mhSessionFromToken(token) {
 }
 
 function mhHeaders() {
-    var token = (localStorage.getItem('gcore_mh_token') || '').replace(/^Bearer\s+/i, '').trim();
+    var token     = (localStorage.getItem('gcore_mh_token')   || '').replace(/^Bearer\s+/i, '').trim();
+    var profileId = (localStorage.getItem('gcore_mh_profile') || '');
+    var sessionId = (localStorage.getItem('gcore_mh_session') || mhSessionFromToken(token));
     return {
         'Authorization': 'Bearer ' + token,
-        'x-session-id': mhSessionFromToken(token),
-        'Content-Type': 'application/json'
+        'x-profile-id':  profileId,
+        'x-session-id':  sessionId,
+        'Content-Type':  'application/json'
     };
 }
 
@@ -864,13 +879,17 @@ function mhSaveTokens() {
 }
 
 async function mhConnect() {
-    var token = document.getElementById('mhToken').value.trim() || localStorage.getItem('gcore_mh_token');
+    var token     = (document.getElementById('mhToken')?.value     || '').trim() || localStorage.getItem('gcore_mh_token') || '';
+    var profileId = (document.getElementById('mhProfileId')?.value || '').trim() || localStorage.getItem('gcore_mh_profile') || '';
+    var sessionId = (document.getElementById('mhSessionId')?.value || '').trim() || localStorage.getItem('gcore_mh_session') || '';
     if (!token) { toast('Enter your Bearer token.', 'error'); return; }
-    // Strip "Bearer " prefix if user pasted it
     token = token.replace(/^Bearer\s+/i, '').trim();
-    localStorage.setItem('gcore_mh_token', token);
-    // Update the input field too
-    document.getElementById('mhToken').value = token;
+    localStorage.setItem('gcore_mh_token',   token);
+    if (profileId) localStorage.setItem('gcore_mh_profile', profileId);
+    if (sessionId) localStorage.setItem('gcore_mh_session', sessionId);
+    if (document.getElementById('mhToken'))     document.getElementById('mhToken').value     = token;
+    if (document.getElementById('mhProfileId')) document.getElementById('mhProfileId').value = profileId;
+    if (document.getElementById('mhSessionId')) document.getElementById('mhSessionId').value = sessionId;
     document.getElementById('mhLoginStatus').textContent = 'Connecting...';
     document.getElementById('mhLoginStatus').style.color = 'var(--gold)';
 
