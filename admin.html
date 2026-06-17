@@ -625,11 +625,21 @@ window.addEventListener('DOMContentLoaded', () => {
 /* ============================================================
    NAVIGATION
    ============================================================ */
+function sendMhCredsToEditor() {
+    const token     = localStorage.getItem('gcore_mh_token')   || '';
+    const profileId = localStorage.getItem('gcore_mh_profile') || '';
+    const sessionId = localStorage.getItem('gcore_mh_session') || '';
+    if (!token) return;
+    const iframe = document.querySelector('#page-sftp iframe');
+    if (iframe) iframe.contentWindow.postMessage({ type: 'gcore-mh-creds', token, profileId, sessionId }, '*');
+}
+
 function showPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
     document.getElementById('page-' + id).classList.add('active');
     document.querySelector(`.sidebar-link[onclick="showPage('${id}')"]`)?.classList.add('active');
+    if (id === 'sftp') setTimeout(sendMhCredsToEditor, 600);
 }
 
 /* ============================================================
