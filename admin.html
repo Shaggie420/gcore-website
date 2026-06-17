@@ -123,6 +123,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .toast.success{border-color:rgba(74,222,128,.3);color:var(--green)}
 .toast.error{border-color:rgba(248,113,113,.3);color:var(--red)}
 
+/* ====== FILE TREE PANEL (right edge) ====== */
+#fpHandle{position:fixed;right:0;top:0;bottom:0;width:6px;z-index:201;background:linear-gradient(to left,#a463d6,transparent);opacity:.35;cursor:ew-resize;transition:opacity .2s}
+#fpHandle:hover{opacity:.8}
+#filePanel{position:fixed;right:0;top:0;bottom:0;width:280px;background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;transform:translateX(280px);transition:transform .22s cubic-bezier(.4,0,.2,1);z-index:200}
+#filePanel.open{transform:translateX(0);box-shadow:-4px 0 32px rgba(0,0,0,.6)}
+.fp-hdr{padding:14px 16px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.fp-nd{display:flex;align-items:center;gap:8px;padding:5px 10px;cursor:pointer;font-size:.84rem;color:var(--text2);white-space:nowrap;user-select:none}
+.fp-nd:hover{background:var(--surface2);color:var(--text)}
+.fp-nd .fp-nm{overflow:hidden;text-overflow:ellipsis}
+
 /* ====== RESPONSIVE ====== */
 @media(max-width:768px){
 .sidebar{width:60px;padding:12px 0}
@@ -429,16 +439,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             </div>
         </div>
     </div>
-    <div class="card">
-        <div class="card-title" style="color:var(--red)">Danger Zone</div>
-        <div style="display:flex;gap:10px">
-            <button class="btn btn-red btn-sm" onclick="clearAllData()">Wipe All Local Data</button>
-        </div>
-    </div>
 </div>
 
 </div><!-- /main -->
 </div><!-- /app -->
+
+<div id="fpHandle"></div>
+<div id="filePanel">
+    <div class="fp-hdr">
+        <span>File Explorer</span>
+        <span style="cursor:pointer;opacity:.5;font-size:1rem" onclick="closeFP()">✕</span>
+    </div>
+    <div id="fpTree"></div>
+</div>
 
 <script>
 /* ============================================================
@@ -1171,6 +1184,84 @@ function clearAllData() {
         toast('All local data wiped.');
         setTimeout(() => location.reload(), 1000);
     });
+}
+
+/* ============================================================
+   FILE TREE PANEL (right-edge auto-hide)
+   ============================================================ */
+const fpHandle = document.getElementById('fpHandle');
+const filePanelEl = document.getElementById('filePanel');
+let fpLoaded = false, fpTimer2 = null;
+
+function openFP(){
+    clearTimeout(fpTimer2);
+    filePanelEl.classList.add('open');
+    if (!fpLoaded){ fpLoaded = true; renderFPDir('/server/plugins/Skript/scripts', document.getElementById('fpTree'), 0); }
+}
+function closeFP(){
+    fpTimer2 = setTimeout(() => { if (!filePanelEl.matches(':hover')) filePanelEl.classList.remove('open'); }, 380);
+}
+
+fpHandle.addEventListener('mouseenter', openFP);
+filePanelEl.addEventListener('mouseenter', () => clearTimeout(fpTimer2));
+filePanelEl.addEventListener('mouseleave', closeFP);
+document.addEventListener('mousemove', e => { if (e.clientX >= window.innerWidth - 6) openFP(); });
+
+async function renderFPDir(path, container, depth){
+    container.innerHTML = '<div class="fp-nd" style="padding-left:' + (10+depth*14) + 'px;color:var(--text3)">Loading…</div>';
+    const key = editorKey();
+    if (!key){
+        container.innerHTML = '<div class="fp-nd" style="padding:12px;color:var(--text3)">Set Editor Key in Settings first</div>';
+        return;
+    }
+    try {
+        const r = await fetch(EDITOR_URL + '/api/list?path=' + encodeURIComponent(path), { headers:{ 'x-editor-key': key } });
+        if (!r.ok) throw new Error('Load failed (' + r.status + ')');
+        const data = await r.json();
+        const entries = (data.entries || []).sort((a,b) => (b.dir - a.dir) || a.name.localeCompare(b.name));
+        container.innerHTML = '';
+        if (!entries.length){
+            container.innerHTML = '<div class="fp-nd" style="padding-left:' + (10+depth*14) + 'px;color:var(--text3)">Empty</div>';
+            return;
+        }
+        for (const e of entries){
+            const full = (data.path || path).replace(/\/$/,'') + '/' + e.name;
+            const nd = document.createElement('div');
+            nd.className = 'fp-nd';
+            nd.style.paddingLeft = (10 + depth*14) + 'px';
+            const ico = e.dir ? '📁' : (e.name.endsWith('.sk') ? '📜' : e.name.endsWith('.yml') || e.name.endsWith('.yaml') ? '⚙️' : e.name.endsWith('.json') ? '🧾' : '📄');
+            nd.innerHTML = '<span style="flex-shrink:0">' + ico + '</span><span class="fp-nm">' + e.name + '</span>';
+            if (e.dir){
+                const kids = document.createElement('div');
+                kids.style.display = 'none';
+                let loaded = false;
+                nd.onclick = async () => {
+                    if (kids.style.display === 'none'){
+                        kids.style.display = 'block';
+                        nd.querySelector('span').textContent = '📂';
+                        if (!loaded){ loaded = true; await renderFPDir(full, kids, depth+1); }
+                    } else {
+                        kids.style.display = 'none';
+                        nd.querySelector('span').textContent = '📁';
+                    }
+                };
+                container.appendChild(nd);
+                container.appendChild(kids);
+            } else {
+                nd.onclick = () => {
+                    showPage('sftp');
+                    filePanelEl.classList.remove('open');
+                    setTimeout(() => {
+                        const iframe = document.querySelector('#page-sftp iframe');
+                        if (iframe) iframe.contentWindow.postMessage({ type: 'gcore-open-file', path: full, name: e.name }, '*');
+                    }, 300);
+                };
+                container.appendChild(nd);
+            }
+        }
+    } catch(err){
+        container.innerHTML = '<div class="fp-nd" style="padding:12px;color:var(--red)">Error: ' + err.message + '</div>';
+    }
 }
 </script>
 </body>
