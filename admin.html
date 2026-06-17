@@ -403,6 +403,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <button class="btn btn-purple" onclick="applySettings()">Apply Settings</button>
     </div>
     <div class="card">
+        <div class="card-title">Editor API Connection</div>
+        <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Editor Key <span style="color:var(--text3);font-weight:400;text-transform:none">(your GCore Editor password — needed to add/remove mods from any device)</span></label>
+            <div style="display:flex;gap:10px">
+                <input type="password" class="form-input" id="editorKeyInput" placeholder="Editor password">
+                <button class="btn btn-purple" onclick="saveEditorKey()">Save</button>
+            </div>
+        </div>
+    </div>
+    <div class="card">
         <div class="card-title" style="color:var(--red)">Danger Zone</div>
         <div style="display:flex;gap:10px">
             <button class="btn btn-red btn-sm" onclick="clearAllData()">Wipe All Local Data</button>
@@ -414,6 +424,47 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 </div><!-- /app -->
 
 <script>
+/* ============================================================
+   EDITOR API — mod accounts live on the SFTP server now
+   ============================================================ */
+const EDITOR_URL = 'https://gcore-editor.onrender.com';
+
+function editorKey() { return localStorage.getItem('gcore_editor_key') || ''; }
+
+async function fetchModsFromServer() {
+    try {
+        const r = await fetch(EDITOR_URL + '/api/mods');
+        if (r.ok) {
+            const serverMods = await r.json();
+            // If server has no mods yet but localStorage does, use local mods so
+            // existing accounts keep working until the admin re-adds them server-side.
+            if (serverMods.length === 0) {
+                const local = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+                if (local.length > 0) return local;
+            }
+            return serverMods;
+        }
+    } catch (e) {}
+    // Network fallback
+    return JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+}
+
+async function saveModsToServer(mods) {
+    const key = editorKey();
+    if (!key) { toast('Set your Editor Key in Settings first!', 'error'); return false; }
+    try {
+        const r = await fetch(EDITOR_URL + '/api/mods', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-editor-key': key },
+            body: JSON.stringify(mods)
+        });
+        if (r.ok) return true;
+        const err = await r.json().catch(() => ({}));
+        toast('Server error: ' + (err.error || r.status), 'error');
+    } catch (e) { toast('Could not reach editor: ' + e.message, 'error'); }
+    return false;
+}
+
 /* ============================================================
    AUTH SYSTEM (SHA-256 hashed, never stores plaintext)
    ============================================================ */
@@ -439,7 +490,7 @@ function sha256(s) {
     return[h0,h1,h2,h3,h4,h5,h6,h7].map(v=>(v>>>0).toString(16).padStart(8,'0')).join('');
 }
 
-function doLogin() {
+async function doLogin() {
     const user = document.getElementById('loginUser').value.trim().toLowerCase();
     const pass = document.getElementById('loginPass').value;
     const err = document.getElementById('loginErr');
@@ -456,8 +507,9 @@ function doLogin() {
         return;
     }
 
-    // Check mod accounts
-    const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+    // Check mod accounts from server (falls back to localStorage if unreachable)
+    err.textContent = 'Checking...';
+    const mods = await fetchModsFromServer();
     const mod = mods.find(m => m.user.toLowerCase() === user && m.hash === hash);
     if (mod) {
         sessionStorage.setItem('gcore_auth', mod.role);
@@ -474,18 +526,19 @@ function unlockApp(username, role) {
     document.getElementById('app').classList.add('active');
     document.getElementById('loggedUser').textContent = username;
 
-    // Hide pages based on permissions for mod accounts
+    // Apply permission restrictions for mod accounts (fetches from server)
     if (role !== 'admin') {
-        const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
-        const mod = mods.find(m => m.user === username);
-        if (mod) {
-            document.querySelectorAll('.sidebar-link').forEach(l => {
-                const page = l.getAttribute('onclick')?.match(/showPage\('(.+?)'\)/)?.[1];
-                if (page && !mod.perms.includes(page) && page !== 'dashboard') {
-                    l.style.display = 'none';
-                }
-            });
-        }
+        fetchModsFromServer().then(mods => {
+            const mod = mods.find(m => m.user === username);
+            if (mod) {
+                document.querySelectorAll('.sidebar-link').forEach(l => {
+                    const page = l.getAttribute('onclick')?.match(/showPage\('(.+?)'\)/)?.[1];
+                    if (page && !mod.perms.includes(page) && page !== 'dashboard') {
+                        l.style.display = 'none';
+                    }
+                });
+            }
+        });
     }
 
     loadDashboard();
@@ -494,8 +547,8 @@ function unlockApp(username, role) {
 
     const token = localStorage.getItem('gcore_gh_token');
     if (token) document.getElementById('ghToken').value = token;
-    const mhTok = localStorage.getItem('gcore_mh_token');
-    if (mhTok) document.getElementById('mhToken').value = mhTok;
+    const eKey = localStorage.getItem('gcore_editor_key');
+    if (eKey) document.getElementById('editorKeyInput').value = eKey;
 }
 
 function doLogout() {
@@ -588,14 +641,13 @@ function loadDashboard() {
         })
         .catch(() => { document.getElementById('serverInfo').textContent = 'Could not fetch server data.'; });
 
-    const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
-    document.getElementById('d-mods').textContent = mods.length;
+    fetchModsFromServer().then(mods => document.getElementById('d-mods').textContent = mods.length);
 }
 
 setInterval(loadDashboard, 30000);
 
 /* ============================================================
-   MOD ACCOUNTS (localStorage)
+   MOD ACCOUNTS (stored on SFTP server via editor API)
    ============================================================ */
 async function addMod() {
     const user = document.getElementById('newModUser').value.trim();
@@ -609,23 +661,29 @@ async function addMod() {
     if (document.getElementById('perm-mods').checked) perms.push('mods');
     if (document.getElementById('perm-settings').checked) perms.push('settings');
 
-    requireConfirm('Create mod account: ' + user, () => {
+    requireConfirm('Create mod account: ' + user, async () => {
         const hash = sha256(pass);
-        const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+        const mods = await fetchModsFromServer();
         mods.push({ user, hash, role, perms, created: new Date().toLocaleDateString() });
-        localStorage.setItem('gcore_mods', JSON.stringify(mods));
-        document.getElementById('newModUser').value = '';
-        document.getElementById('newModPass').value = '';
-        loadModTable();
-        loadDashboard();
-        toast('Mod account created: ' + user);
+        const ok = await saveModsToServer(mods);
+        if (ok) {
+            document.getElementById('newModUser').value = '';
+            document.getElementById('newModPass').value = '';
+            loadModTable();
+            loadDashboard();
+            toast('Mod account created: ' + user);
+        }
     });
 }
 
-function loadModTable() {
-    const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+async function loadModTable() {
     const tbody = document.getElementById('modTable');
-    if (mods.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3)">No mod accounts yet</td></tr>'; return; }
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3)">Loading...</td></tr>';
+    const mods = await fetchModsFromServer();
+    if (mods.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3)">No mod accounts yet</td></tr>';
+        return;
+    }
     tbody.innerHTML = mods.map((m, i) => `
         <tr>
             <td style="font-weight:600;color:var(--text)">${m.user}</td>
@@ -636,15 +694,17 @@ function loadModTable() {
         </tr>`).join('');
 }
 
-function deleteMod(idx) {
-    const mods = JSON.parse(localStorage.getItem('gcore_mods') || '[]');
+async function deleteMod(idx) {
+    const mods = await fetchModsFromServer();
     const name = mods[idx]?.user;
-    requireConfirm('Delete mod account: ' + name, () => {
+    requireConfirm('Delete mod account: ' + name, async () => {
         mods.splice(idx, 1);
-        localStorage.setItem('gcore_mods', JSON.stringify(mods));
-        loadModTable();
-        loadDashboard();
-        toast('Deleted: ' + name);
+        const ok = await saveModsToServer(mods);
+        if (ok) {
+            loadModTable();
+            loadDashboard();
+            toast('Deleted: ' + name);
+        }
     });
 }
 
@@ -977,6 +1037,13 @@ function toggleAutoConsole() {
 /* ============================================================
    SETTINGS
    ============================================================ */
+function saveEditorKey() {
+    const key = document.getElementById('editorKeyInput').value.trim();
+    if (!key) { toast('Enter your editor key.', 'error'); return; }
+    localStorage.setItem('gcore_editor_key', key);
+    toast('Editor key saved — mod management now works from any device.');
+}
+
 function applySettings() {
     requireConfirm('Apply appearance settings', () => {
         const accent = document.getElementById('accentColor').value;
@@ -1013,6 +1080,7 @@ function loadSavedSettings() {
 function clearAllData() {
     requireConfirm('WIPE ALL local admin data (mods, settings, tokens)', () => {
         localStorage.removeItem('gcore_mods');
+        localStorage.removeItem('gcore_editor_key');
         localStorage.removeItem('gcore_gh_token');
         localStorage.removeItem('gcore_sftp');
         localStorage.removeItem('gcore_settings');
