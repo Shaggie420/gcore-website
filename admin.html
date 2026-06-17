@@ -418,27 +418,26 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
     <div class="card">
         <div class="card-title">Minehut Connection <span style="font-size:.75rem;font-weight:400;color:var(--text3)">(needed for Ctrl+Q in-game reload)</span></div>
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Minehut Email</label>
-                <input type="email" class="form-input" id="mhEmail" placeholder="your@email.com">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Minehut Password</label>
-                <input type="password" class="form-input" id="mhLoginPass" placeholder="Password">
+        <div class="form-group" style="margin-bottom:8px">
+            <label class="form-label">Session Token <span style="font-weight:400;text-transform:none;color:var(--text3)">— paste from your Minehut tab</span></label>
+            <div style="display:flex;gap:10px">
+                <input type="password" class="form-input" id="mhToken" placeholder="Paste your Minehut session token here">
+                <button class="btn btn-purple" onclick="mhConnect()">Save</button>
             </div>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
-            <button class="btn btn-purple" id="mhLoginBtn" onclick="mhLogin()">Connect Minehut</button>
-            <span id="mhLoginStatus" style="font-size:.82rem;color:var(--text3)">Not connected</span>
-        </div>
-        <div id="mhTotpRow" style="display:none;margin-top:14px">
-            <label class="form-label">Verification Code <span style="font-weight:400;text-transform:none;color:var(--text3)">(sent to your email by Minehut)</span></label>
-            <div style="display:flex;gap:10px;align-items:center">
-                <input type="text" class="form-input" id="mhTotpCode" placeholder="6-digit code" maxlength="8" style="max-width:180px;letter-spacing:4px;text-align:center" oninput="this.value=this.value.replace(/\D/g,'')">
-                <button class="btn btn-purple" onclick="mhLoginVerify()">Verify</button>
+        <span id="mhLoginStatus" style="font-size:.82rem;color:var(--text3)">Not connected</span>
+        <details style="margin-top:12px">
+            <summary style="font-size:.8rem;color:var(--text3);cursor:pointer;user-select:none">How to get your token</summary>
+            <div style="margin-top:10px;padding:12px;background:var(--bg);border-radius:8px;font-size:.82rem;color:var(--text2);line-height:1.7">
+                1. Go to your <b>Minehut tab</b> (you're already logged in there)<br>
+                2. Press <b>F12</b> to open DevTools<br>
+                3. Click the <b>Console</b> tab<br>
+                4. Paste this and press Enter:<br>
+                <code id="mhCopyCmd" style="display:block;margin:8px 0;padding:8px;background:var(--surface2);border-radius:6px;font-size:.78rem;word-break:break-all;cursor:pointer" onclick="navigator.clipboard.writeText(this.textContent).then(()=>toast('Copied!'))" title="Click to copy">try{let a=JSON.parse(localStorage.getItem('persist:auth'));copy(JSON.parse(a.token))}catch(e){try{copy(localStorage.getItem('token'))}catch(e2){copy(document.cookie)}}</code>
+                5. It copies your token automatically — paste it in the field above<br>
+                <span style="color:var(--text3);font-size:.76rem">(Click the command above to copy it)</span>
             </div>
-        </div>
+        </details>
     </div>
     <div class="card">
         <div class="card-title">Editor API Connection</div>
