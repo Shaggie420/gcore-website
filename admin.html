@@ -433,7 +433,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
                 2. Press <b>F12</b> to open DevTools<br>
                 3. Click the <b>Console</b> tab<br>
                 4. Paste this and press Enter:<br>
-                <code id="mhCopyCmd" style="display:block;margin:8px 0;padding:8px;background:var(--surface2);border-radius:6px;font-size:.78rem;word-break:break-all;cursor:pointer" onclick="navigator.clipboard.writeText(this.textContent).then(()=>toast('Copied!'))" title="Click to copy">try{let a=JSON.parse(localStorage.getItem('persist:auth'));copy(JSON.parse(a.token))}catch(e){try{copy(localStorage.getItem('token'))}catch(e2){copy(document.cookie)}}</code>
+                <code id="mhCopyCmd" style="display:block;margin:8px 0;padding:8px;background:var(--surface2);border-radius:6px;font-size:.78rem;word-break:break-all;cursor:pointer" onclick="navigator.clipboard.writeText(this.textContent).then(()=>toast('Copied!'))" title="Click to copy">copy(localStorage.getItem('slg_user_token'))</code>
                 5. It copies your token automatically — paste it in the field above<br>
                 <span style="color:var(--text3);font-size:.76rem">(Click the command above to copy it)</span>
             </div>
@@ -871,15 +871,15 @@ async function mhConnect() {
     localStorage.setItem('gcore_mh_token', token);
     // Update the input field too
     document.getElementById('mhToken').value = token;
-    document.getElementById('mhStatus').textContent = 'Connecting...';
-    document.getElementById('mhStatus').style.color = 'var(--gold)';
+    document.getElementById('mhLoginStatus').textContent = 'Connecting...';
+    document.getElementById('mhLoginStatus').style.color = 'var(--gold)';
 
     try {
-        document.getElementById('mhStatus').textContent = 'Finding server...';
+        document.getElementById('mhLoginStatus').textContent = 'Finding server...';
 
         // Get server ID
         mhServerId = '699ba8b856a201e85dc55be5';
-        document.getElementById('mhStatus').textContent = 'Loading files...';
+        document.getElementById('mhLoginStatus').textContent = 'Loading files...';
 
         // File listing with auth
         const res = await mhFetch('file/' + mhServerId + '/list/');
@@ -891,7 +891,7 @@ async function mhConnect() {
             throw new Error(data.message || data.error || 'Auth failed — get a fresh token');
         }
 
-        document.getElementById('mhStatus').innerHTML = '<span style="color:var(--green)">✓ Connected</span>';
+        document.getElementById('mhLoginStatus').innerHTML = '<span style="color:var(--green)">✓ Connected</span>';
 
         // Debug: show raw response keys so we know the format
         console.log('File API response:', JSON.stringify(data).substring(0, 500));
@@ -916,7 +916,7 @@ async function mhConnect() {
         }
 
     } catch (e) {
-        document.getElementById('mhStatus').innerHTML = '<span style="color:var(--red)">✗ ' + e.message + '</span>';
+        document.getElementById('mhLoginStatus').innerHTML = '<span style="color:var(--red)">✗ ' + e.message + '</span>';
     }
 }
 
