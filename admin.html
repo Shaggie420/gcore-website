@@ -597,16 +597,11 @@ function unlockApp(username, role) {
     if (token) document.getElementById('ghToken').value = token;
     const eKey = localStorage.getItem('gcore_editor_key');
     if (eKey) document.getElementById('editorKeyInput').value = eKey;
-    const mhTok = localStorage.getItem('gcore_mh_token');
-    if (mhTok) {
-        const s = document.getElementById('mhLoginStatus');
-        s.textContent = '✓ Connected';
-        s.style.color = 'var(--green)';
-        const mhP = document.getElementById('mhProfileId');
-        const mhS = document.getElementById('mhSessionId');
-        if (mhP) mhP.value = localStorage.getItem('gcore_mh_profile') || '';
-        if (mhS) mhS.value = localStorage.getItem('gcore_mh_session') || '';
-    }
+    updateMhStatus();
+    const mhP = document.getElementById('mhProfileId');
+    const mhS = document.getElementById('mhSessionId');
+    if (mhP) mhP.value = localStorage.getItem('gcore_mh_profile') || '';
+    if (mhS) mhS.value = localStorage.getItem('gcore_mh_session') || '';
 }
 
 function doLogout() {
@@ -900,10 +895,31 @@ async function mhConnect() {
     if (document.getElementById('mhToken'))     document.getElementById('mhToken').value     = token;
     if (document.getElementById('mhProfileId')) document.getElementById('mhProfileId').value = profileId;
     if (document.getElementById('mhSessionId')) document.getElementById('mhSessionId').value = sessionId;
+    updateMhStatus();
+    toast('Minehut credentials saved — Ctrl+Q reload is ready');
+    sendMhCredsToEditor();
+}
+
+function updateMhStatus() {
+    const token = localStorage.getItem('gcore_mh_token') || '';
     const s = document.getElementById('mhLoginStatus');
+    if (!token) { s.textContent = 'Not connected'; s.style.color = 'var(--text3)'; return; }
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+        if (payload.exp) {
+            const hoursLeft = Math.round((payload.exp * 1000 - Date.now()) / 3600000);
+            if (hoursLeft <= 0) {
+                s.innerHTML = '✗ Token expired — get a new one from Minehut Network tab';
+                s.style.color = 'var(--red)';
+            } else {
+                s.innerHTML = '✓ Connected — token expires in <b>' + hoursLeft + 'h</b>';
+                s.style.color = hoursLeft < 3 ? 'var(--gold)' : 'var(--green)';
+            }
+            return;
+        }
+    } catch(e) {}
     s.textContent = '✓ Saved';
     s.style.color = 'var(--green)';
-    toast('Minehut credentials saved — Ctrl+Q reload is ready');
 }
 
 function renderFileList(files) {
