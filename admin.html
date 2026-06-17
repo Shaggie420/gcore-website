@@ -403,6 +403,23 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <button class="btn btn-purple" onclick="applySettings()">Apply Settings</button>
     </div>
     <div class="card">
+        <div class="card-title">Minehut Connection <span style="font-size:.75rem;font-weight:400;color:var(--text3)">(needed for Ctrl+Q in-game reload)</span></div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Minehut Email</label>
+                <input type="email" class="form-input" id="mhEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Minehut Password</label>
+                <input type="password" class="form-input" id="mhLoginPass" placeholder="Password">
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+            <button class="btn btn-purple" onclick="mhLogin()">Connect Minehut</button>
+            <span id="mhLoginStatus" style="font-size:.82rem;color:var(--text3)">Not connected</span>
+        </div>
+    </div>
+    <div class="card">
         <div class="card-title">Editor API Connection</div>
         <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Editor Key <span style="color:var(--text3);font-weight:400;text-transform:none">(your GCore Editor password — needed to add/remove mods from any device)</span></label>
@@ -549,6 +566,12 @@ function unlockApp(username, role) {
     if (token) document.getElementById('ghToken').value = token;
     const eKey = localStorage.getItem('gcore_editor_key');
     if (eKey) document.getElementById('editorKeyInput').value = eKey;
+    const mhTok = localStorage.getItem('gcore_mh_token');
+    if (mhTok) {
+        const s = document.getElementById('mhLoginStatus');
+        s.textContent = '✓ Connected';
+        s.style.color = 'var(--green)';
+    }
 }
 
 function doLogout() {
@@ -1037,6 +1060,67 @@ function toggleAutoConsole() {
 /* ============================================================
    SETTINGS
    ============================================================ */
+async function mhLogin() {
+    const email = document.getElementById('mhEmail').value.trim();
+    const pass = document.getElementById('mhLoginPass').value;
+    if (!email || !pass) { toast('Enter your Minehut email and password.', 'error'); return; }
+    const statusEl = document.getElementById('mhLoginStatus');
+    statusEl.textContent = 'Connecting...';
+    statusEl.style.color = 'var(--gold)';
+    try {
+        const r = await fetch(MH_PROXY + 'users/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password: pass })
+        });
+        const data = await r.json();
+        if (!r.ok || !data.token) {
+            statusEl.textContent = '✗ ' + (data.message || 'Login failed');
+            statusEl.style.color = 'var(--red)';
+            toast('Minehut login failed: ' + (data.message || r.status), 'error');
+            return;
+        }
+        localStorage.setItem('gcore_mh_token', data.token);
+        statusEl.textContent = '✓ Connected';
+        statusEl.style.color = 'var(--green)';
+        toast('Minehut connected — Ctrl+Q reload is now active!');
+    } catch (e) {
+        statusEl.textContent = '✗ Error';
+        statusEl.style.color = 'var(--red)';
+        toast('Login error: ' + e.message, 'error');
+    }
+}
+
+// Relay sk reload from the embedded editor iframe — the iframe has no MH session,
+// but this parent page does, so it fires the command on behalf of the editor.
+window.addEventListener('message', async (e) => {
+    if (e.data?.type !== 'gcore-sk-reload') return;
+    const path = (e.data.path || '').replace(/\\/g, '/');
+    const mark = 'plugins/Skript/scripts';
+    const i = path.indexOf(mark);
+    if (i < 0) { e.source?.postMessage({ type: 'gcore-sk-reload-result', ok: false, error: 'Not a scripts path' }, '*'); return; }
+    const arg = path.slice(i + mark.length).replace(/^\/+/, '').replace(/\.sk$/i, '');
+    try {
+        const r = await mhFetch('server/699ba8b856a201e85dc55be5/send_command', {
+            method: 'POST',
+            body: JSON.stringify({ command: 'sk reload ' + arg })
+        });
+        if (r.ok) {
+            e.source?.postMessage({ type: 'gcore-sk-reload-result', ok: true }, '*');
+            toast('Reloaded ' + arg + ' in-game!');
+        } else {
+            const body = await r.text();
+            let msg = 'Reload failed';
+            try { const j = JSON.parse(body); if (j.expired) msg = 'Minehut session expired — reconnect in Settings'; else msg = j.message || msg; } catch(_) {}
+            e.source?.postMessage({ type: 'gcore-sk-reload-result', ok: false, error: msg }, '*');
+            toast(msg, 'error');
+        }
+    } catch (err) {
+        e.source?.postMessage({ type: 'gcore-sk-reload-result', ok: false, error: err.message }, '*');
+        toast('Reload error: ' + err.message, 'error');
+    }
+});
+
 function saveEditorKey() {
     const key = document.getElementById('editorKeyInput').value.trim();
     if (!key) { toast('Enter your editor key.', 'error'); return; }
