@@ -98,18 +98,18 @@
             pointer-events: none;
         }
 
+        /* Pre-blurred radial gradients instead of filter:blur(150px) — same look, ~0 render cost */
         .bg-glow {
             position: fixed;
             width: 600px;
             height: 600px;
             border-radius: 50%;
-            filter: blur(150px);
-            opacity: 0.15;
+            opacity: 0.5;
             pointer-events: none;
             z-index: 0;
         }
-        .bg-glow-1 { top: -200px; left: -100px; background: var(--purple-main); }
-        .bg-glow-2 { bottom: -200px; right: -100px; background: var(--purple-deep); }
+        .bg-glow-1 { top: -200px; left: -100px; background: radial-gradient(circle, rgba(164,99,214,0.22), transparent 70%); }
+        .bg-glow-2 { bottom: -200px; right: -100px; background: radial-gradient(circle, rgba(123,63,173,0.22), transparent 70%); }
 
         /* ========== UTILITIES ========== */
         .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
@@ -380,8 +380,37 @@
         .status-dot.online { background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.5); animation: pulse-dot 2s infinite; }
         .status-dot.offline { background: #f87171; box-shadow: 0 0 8px rgba(248,113,113,0.4); }
 
+        /* Pop-out live status button */
+        .status-popout-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+            background: rgba(164,99,214,0.1);
+            border: 1px solid rgba(164,99,214,0.25);
+            color: var(--purple-light);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, transform 0.2s;
+        }
+        .status-popout-btn:hover { background: rgba(164,99,214,0.2); border-color: rgba(164,99,214,0.5); transform: translateY(-1px); }
+        .status-popout-btn svg { width: 16px; height: 16px; }
+
+        /* Respect users who ask for less motion — kills bees, honey & transitions */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+            .bee-layer, .honey-particles { display: none !important; }
+            html { scroll-behavior: auto; }
+        }
+
         /* ========== SECTION STYLES ========== */
         section { padding: 100px 0; }
+        /* Skip rendering off-screen sections so scrolling never janks */
+        section:not(.hero) { content-visibility: auto; contain-intrinsic-size: 1px 700px; }
 
         .section-label {
             font-size: 0.8rem;
@@ -662,7 +691,7 @@
             width: 32px; height: 28px;
             image-rendering: pixelated;
             opacity: 0.55;
-            filter: drop-shadow(0 0 6px rgba(255,200,50,.25));
+            will-change: transform;
             animation-timing-function: linear;
             animation-iteration-count: infinite;
         }
@@ -933,6 +962,11 @@
                 <div class="stat-lbl">Total Joins</div>
             </div>
         </div>
+
+        <button class="status-popout-btn" onclick="openStatusPopout()" title="Open a live status window you can resize and keep on top">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+            Pop Out Live Status
+        </button>
     </div>
 </section>
 
@@ -954,13 +988,13 @@
                 <p>With a full prestige system, custom pets, private mines, farming, fishing, PvP arenas, and hundreds of generators to unlock &mdash; there's always something to grind for.</p>
             </div>
             <div class="about-image reveal" id="slideshow">
-                <img src="spawn.png" alt="GCore Spawn Area" class="active">
-                <img src="farm.png" alt="GCore Farming Area">
-                <img src="fishing.png" alt="GCore Fishing Pond">
-                <img src="beekeeper.png" alt="GCore Bee Keeper Event">
-                <img src="mine.png" alt="GCore Private Mine">
-                <img src="generators.png" alt="GCore Generator Plot">
-                <img src="parkour.png" alt="GCore Parkour">
+                <img src="spawn.png" alt="GCore Spawn Area" class="active" decoding="async" fetchpriority="high">
+                <img src="farm.png" alt="GCore Farming Area" loading="lazy" decoding="async">
+                <img src="fishing.png" alt="GCore Fishing Pond" loading="lazy" decoding="async">
+                <img src="beekeeper.png" alt="GCore Bee Keeper Event" loading="lazy" decoding="async">
+                <img src="mine.png" alt="GCore Private Mine" loading="lazy" decoding="async">
+                <img src="generators.png" alt="GCore Generator Plot" loading="lazy" decoding="async">
+                <img src="parkour.png" alt="GCore Parkour" loading="lazy" decoding="async">
                 <div class="slide-dots">
                     <span class="active" onclick="goSlide(0)"></span>
                     <span onclick="goSlide(1)"></span>
@@ -1197,14 +1231,21 @@
     fetchServerStats();
     setInterval(fetchServerStats, 30000);
 
-    // Fallback: remove loader after 4s max
-    setTimeout(() => { if (!loader.classList.contains('done')) { advanceLoader(100); setTimeout(() => loader.classList.add('done'), 300); } }, 4000);
+    // Fallback: remove loader after 2.5s max so the page never sits on the loader
+    setTimeout(() => { if (!loader.classList.contains('done')) { advanceLoader(100); setTimeout(() => loader.classList.add('done'), 300); } }, 2500);
 
-    // Header scroll effect
+    // Header scroll effect (passive + rAF-throttled so scrolling never blocks)
     const header = document.getElementById('header');
+    let scrollTicking = false;
     window.addEventListener('scroll', () => {
-        header.classList.toggle('scrolled', window.scrollY > 40);
-    });
+        if (!scrollTicking) {
+            requestAnimationFrame(() => {
+                header.classList.toggle('scrolled', window.scrollY > 40);
+                scrollTicking = false;
+            });
+            scrollTicking = true;
+        }
+    }, { passive: true });
 
     // Copy IP
     function copyIP() {
@@ -1216,6 +1257,58 @@
                 document.querySelectorAll('.copy-btn').forEach(btn => btn.textContent = 'Copy IP');
             }, 2000);
         });
+    }
+
+    // Pop-out live status window — resizable, self-contained, auto-refreshes
+    function openStatusPopout() {
+        const w = window.open('', 'gcoreLiveStatus', 'width=340,height=460,menubar=no,toolbar=no,location=no,status=no');
+        if (!w) { alert('Popup blocked — allow popups for this site to use the live status window.'); return; }
+        w.document.open();
+        w.document.write(`<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>GCore Live Status</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:#0a0a0f;color:#f0f0f5;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;-webkit-font-smoothing:antialiased}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.5rem;letter-spacing:-.5px;background:linear-gradient(135deg,#cd8cff,#a463d6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:8px}
+.on{background:#4ade80;box-shadow:0 0 10px rgba(74,222,128,.6);animation:p 2s infinite}
+.off{background:#f87171;box-shadow:0 0 10px rgba(248,113,113,.5)}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
+.status{font-size:1.1rem;font-weight:700}
+.big{font-family:'Space Grotesk',sans-serif;font-size:3.4rem;font-weight:800;color:#cd8cff;line-height:1}
+.cap{font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;color:#5a5a6a;margin-top:4px}
+.row{display:flex;gap:14px;width:100%}
+.box{flex:1;background:#12121a;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;text-align:center}
+.box .n{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:700;color:#f0f0f5}
+.box .l{font-size:.66rem;text-transform:uppercase;letter-spacing:1px;color:#5a5a6a;margin-top:3px}
+.foot{font-size:.68rem;color:#5a5a6a;margin-top:2px}
+.card{background:#12121a;border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:24px;width:100%;text-align:center}
+</style></head><body>
+<div class="logo">GCORE</div>
+<div class="card">
+  <div class="status"><span class="dot off" id="d"></span><span id="s">Connecting…</span></div>
+  <div class="big" id="p" style="margin-top:14px">–</div>
+  <div class="cap">Players Online</div>
+</div>
+<div class="row">
+  <div class="box"><div class="n" id="mx">–</div><div class="l">Max</div></div>
+  <div class="box"><div class="n" id="jn">–</div><div class="l">Total Joins</div></div>
+</div>
+<div class="foot" id="ts">refreshing every 20s</div>
+<script>
+function pull(){
+  fetch('https://api.minehut.com/server/gcore?byName=true').then(r=>r.json()).then(d=>{
+    var s=d.server,on=s.online===true;
+    document.getElementById('d').className='dot '+(on?'on':'off');
+    document.getElementById('s').textContent=on?'Online':'Offline';
+    document.getElementById('p').textContent=on?(s.playerCount||0).toLocaleString():'0';
+    document.getElementById('mx').textContent=(s.maxPlayers||500).toLocaleString();
+    document.getElementById('jn').textContent=(s.joins||0).toLocaleString();
+    document.getElementById('ts').textContent='updated '+new Date().toLocaleTimeString();
+  }).catch(function(){document.getElementById('s').textContent='Unavailable';});
+}
+pull();setInterval(pull,20000);
+<\/script></body></html>`);
+        w.document.close();
     }
 
     // Scroll reveal
@@ -1311,16 +1404,12 @@
         <rect x="26" y="14" width="6" height="2" rx="1" fill="#1a1a1a" opacity="0.6"/>
         <circle cx="8" cy="13" r="2.5" fill="#1a1a1a"/>
         <circle cx="8" cy="12" r="1" fill="#fff"/>
-        <rect x="10" y="2" width="5" height="8" rx="2" fill="#fff" opacity="0.5">
-            <animate attributeName="opacity" values="0.5;0.8;0.5" dur="0.12s" repeatCount="indefinite"/>
-        </rect>
-        <rect x="17" y="2" width="5" height="8" rx="2" fill="#fff" opacity="0.5">
-            <animate attributeName="opacity" values="0.8;0.5;0.8" dur="0.12s" repeatCount="indefinite"/>
-        </rect>
+        <rect x="10" y="2" width="5" height="8" rx="2" fill="#fff" opacity="0.6"/>
+        <rect x="17" y="2" width="5" height="8" rx="2" fill="#fff" opacity="0.6"/>
     </svg>`;
 
     const anims = ['flyAcrossR','flyAcrossL','flyDiag1','flyDiag2'];
-    const beeCount = 12;
+    const beeCount = window.innerWidth < 768 ? 4 : 7;
 
     for(let i = 0; i < beeCount; i++){
         const bee = document.createElement('div');
@@ -1346,7 +1435,8 @@
 (function(){
     const c = document.getElementById('honeyParticles');
     if(!c) return;
-    for(let i = 0; i < 30; i++){
+    const honeyCount = window.innerWidth < 768 ? 8 : 14;
+    for(let i = 0; i < honeyCount; i++){
         const d = document.createElement('div');
         d.className = 'honey-dot';
         const s = 5 + Math.random() * 6;
