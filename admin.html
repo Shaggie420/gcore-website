@@ -904,11 +904,10 @@ async function manageServer(idx){
     const servers = await getServers();
     const s = servers[idx];
     if(!s) return;
-    localStorage.setItem('gcore_active_server', JSON.stringify(s));
     showPage('sftp');
     setTimeout(()=>{
         const f = document.getElementById('sftpFrame');
-        if(f && f.contentWindow) f.contentWindow.postMessage({ type:'gcore-sftp-server', server:s }, '*');
+        if(f && f.contentWindow) f.contentWindow.postMessage({ type:'gcore-sftp-server', server: s, serverIndex: idx }, '*');
     }, 800);
     toast('Opening editor for '+(s.nickname||s.mhName||'server')+'…');
 }
