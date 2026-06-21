@@ -773,17 +773,36 @@ setInterval(loadDashboard, 30000);
 /* ============================================================
    SERVERS DASHBOARD (local-only — nicknames & SFTP creds never leave this device)
    ============================================================ */
-function getServers(){ try { return JSON.parse(localStorage.getItem('gcore_servers')||'[]'); } catch(e){ return []; } }
-function setServers(s){ localStorage.setItem('gcore_servers', JSON.stringify(s)); }
+let _serversCache = [];
+async function getServers(){
+    try {
+        const key = editorKey(); if (!key) return _serversCache;
+        const r = await fetch(EDITOR_URL + '/api/servers', { headers: { 'x-editor-key': key } });
+        if (r.ok) { _serversCache = await r.json(); return _serversCache; }
+    } catch(e){}
+    return _serversCache;
+}
+async function setServers(s){
+    _serversCache = s;
+    const key = editorKey();
+    if (!key) { toast('Set your Editor Key in Settings first!', 'error'); return; }
+    try {
+        const r = await fetch(EDITOR_URL + '/api/servers', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'x-editor-key': key },
+            body: JSON.stringify(s)
+        });
+        if (!r.ok) { const d = await r.json().catch(()=>({})); toast('Save failed: ' + (d.error||r.status), 'error'); }
+    } catch(e) { toast('Could not reach editor: ' + e.message, 'error'); }
+}
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function timeAgo(ts){ if(!ts) return '—'; const d=Date.now()-Number(ts); if(d<0) return '—'; const days=Math.floor(d/86400000); if(days>0) return days+' day'+(days>1?'s':'')+' ago'; const h=Math.floor(d/3600000); if(h>0) return h+'h ago'; const m=Math.floor(d/60000); return (m>0?m:1)+'m ago'; }
 
 let editingSrvIdx = -1;
 
-function loadServers(){
+async function loadServers(){
     const grid = document.getElementById('srvGrid');
     if(!grid) return;
-    const servers = getServers();
+    const servers = await getServers();
     let html = servers.map((s,i)=>srvCardHTML(s,i)).join('');
     html += '<div class="srv-add" onclick="openSrvModal(-1)"><div class="plus">+</div><div style="font-weight:600">Add a Server</div><div style="font-size:.76rem">Connect over SFTP</div></div>';
     grid.innerHTML = html;
@@ -821,26 +840,22 @@ async function refreshSrvStatus(name, i){
         if(!r.ok) return;
         const d = await r.json();
         const s = d.server; if(!s) return;
-        const servers = getServers(); if(!servers[i]) return;
         const st = s.suspended ? 'suspended' : (s.online ? 'online' : 'hibernating');
-        servers[i]._status = st;
-        servers[i].plan = s.server_plan || servers[i].plan || '—';
-        servers[i].last = s.online ? 'Online now' : timeAgo(s.last_online || s.lastOnline);
-        setServers(servers);
         const card = document.getElementById('srvCard-'+i);
         const badge = document.getElementById('srvStatus-'+i);
         const planEl = document.getElementById('srvPlan-'+i);
         const lastEl = document.getElementById('srvLast-'+i);
         if(card) card.className = 'srv-card '+st;
         if(badge){ badge.className='srv-status '+st; badge.innerHTML='<span class="sdot"></span>'+st; }
-        if(planEl) planEl.textContent = servers[i].plan;
-        if(lastEl) lastEl.textContent = servers[i].last;
+        if(planEl) planEl.textContent = s.server_plan || '—';
+        if(lastEl) lastEl.textContent = s.online ? 'Online now' : timeAgo(s.last_online || s.lastOnline);
     }catch(e){}
 }
 
-function openSrvModal(idx){
+async function openSrvModal(idx){
     editingSrvIdx = idx;
-    const s = idx>=0 ? (getServers()[idx]||{}) : {};
+    const servers = await getServers();
+    const s = idx>=0 ? (servers[idx]||{}) : {};
     document.getElementById('srvModalTitle').textContent = idx>=0 ? 'Edit Server' : 'Add Server';
     document.getElementById('srvNick').value = s.nickname||'';
     document.getElementById('srvIcon').value = s.icon||'';
@@ -848,13 +863,13 @@ function openSrvModal(idx){
     document.getElementById('srvHost').value = s.host||'';
     document.getElementById('srvPort').value = s.port||'';
     document.getElementById('srvUser').value = s.user||'';
-    document.getElementById('srvPass').value = s.pass||'';
+    document.getElementById('srvPass').value = (s.pass && s.pass !== '••••••') ? s.pass : '';
     document.getElementById('srvErr').textContent = '';
     document.getElementById('srvModal').classList.add('show');
 }
 function closeSrvModal(){ document.getElementById('srvModal').classList.remove('show'); editingSrvIdx=-1; }
 
-function saveServer(){
+async function saveServer(){
     const obj = {
         nickname: document.getElementById('srvNick').value.trim(),
         icon: document.getElementById('srvIcon').value.trim(),
@@ -865,25 +880,29 @@ function saveServer(){
         pass: document.getElementById('srvPass').value
     };
     if(!obj.nickname && !obj.mhName){ document.getElementById('srvErr').textContent='Give it at least a nickname or a Minehut name.'; return; }
-    const servers = getServers();
-    if(editingSrvIdx>=0){ obj._status = servers[editingSrvIdx]?._status; servers[editingSrvIdx]=obj; }
-    else servers.push(obj);
-    setServers(servers);
+    const servers = await getServers();
+    if(editingSrvIdx>=0){
+        if(!obj.pass || obj.pass === '••••••') obj.pass = servers[editingSrvIdx]?.pass || '';
+        obj._status = servers[editingSrvIdx]?._status;
+        servers[editingSrvIdx]=obj;
+    } else servers.push(obj);
+    await setServers(servers);
     closeSrvModal();
     loadServers();
     toast('Server saved.');
 }
 
-function deleteServer(idx){
-    const servers = getServers();
+async function deleteServer(idx){
+    const servers = await getServers();
     const nm = servers[idx]?.nickname || servers[idx]?.mhName || 'this server';
-    requireConfirm('Remove '+nm+' from your dashboard (local only)', ()=>{
-        servers.splice(idx,1); setServers(servers); loadServers(); toast('Removed '+nm+'.');
+    requireConfirm('Remove '+nm+' from your dashboard', async ()=>{
+        servers.splice(idx,1); await setServers(servers); loadServers(); toast('Removed '+nm+'.');
     });
 }
 
-function manageServer(idx){
-    const s = getServers()[idx];
+async function manageServer(idx){
+    const servers = await getServers();
+    const s = servers[idx];
     if(!s) return;
     localStorage.setItem('gcore_active_server', JSON.stringify(s));
     showPage('sftp');
