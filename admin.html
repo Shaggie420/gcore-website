@@ -631,7 +631,7 @@ function unlockApp(username, role) {
             if (mod) {
                 document.querySelectorAll('.sidebar-link').forEach(l => {
                     const page = l.getAttribute('onclick')?.match(/showPage\('(.+?)'\)/)?.[1];
-                    if (page && !mod.perms.includes(page) && page !== 'dashboard') {
+                    if (page && !mod.perms.includes(page) && page !== 'dashboard' && page !== 'servers') {
                         l.style.display = 'none';
                     }
                 });
