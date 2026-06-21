@@ -127,10 +127,42 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .toast.success{border-color:rgba(74,222,128,.3);color:var(--green)}
 .toast.error{border-color:rgba(248,113,113,.3);color:var(--red)}
 
+/* ====== SERVERS DASHBOARD ====== */
+.srv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px}
+.srv-card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:transform .18s cubic-bezier(.4,0,.2,1),border-color .18s,box-shadow .18s}
+.srv-card:hover{transform:translateY(-3px);border-color:rgba(164,99,214,.35);box-shadow:0 14px 34px rgba(0,0,0,.45)}
+.srv-card .accent{height:3px;width:100%;background:linear-gradient(90deg,var(--purple),var(--purple-light))}
+.srv-card.online .accent{background:linear-gradient(90deg,#22c55e,#4ade80)}
+.srv-card.suspended .accent{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.srv-head{display:flex;align-items:center;gap:14px;padding:18px 20px 12px}
+.srv-icon{width:46px;height:46px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;overflow:hidden;border:1px solid var(--border)}
+.srv-icon img{width:100%;height:100%;object-fit:cover}
+.srv-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.06rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srv-host{font-size:.76rem;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srv-status{margin-left:auto;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:5px 11px;border-radius:100px;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.srv-status .sdot{width:6px;height:6px;border-radius:50%}
+.srv-status.online{background:rgba(74,222,128,.12);color:var(--green)}.srv-status.online .sdot{background:var(--green);box-shadow:0 0 8px var(--green)}
+.srv-status.hibernating{background:rgba(138,138,154,.12);color:var(--text2)}.srv-status.hibernating .sdot{background:var(--text2)}
+.srv-status.suspended{background:rgba(245,158,11,.14);color:#fbbf24}.srv-status.suspended .sdot{background:#fbbf24}
+.srv-meta{display:flex;gap:28px;padding:4px 20px 16px}
+.srv-meta .k{font-size:.6rem;text-transform:uppercase;letter-spacing:1px;color:var(--text3)}
+.srv-meta .v{font-size:.9rem;color:var(--text);margin-top:3px;font-weight:500}
+.srv-actions{display:flex;border-top:1px solid var(--border)}
+.srv-actions button{flex:1;padding:13px 8px;background:transparent;border:none;border-right:1px solid var(--border);color:var(--text2);font-size:.8rem;font-weight:600;cursor:pointer;transition:background .15s,color .15s;font-family:inherit}
+.srv-actions button:last-child{border-right:none}
+.srv-actions button:hover{background:var(--surface2);color:var(--text)}
+.srv-actions .primary{color:var(--purple-light)}
+.srv-actions .primary:hover{background:rgba(164,99,214,.12)}
+.srv-add{border:1.5px dashed rgba(255,255,255,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:var(--text3);cursor:pointer;min-height:204px;transition:all .18s}
+.srv-add:hover{border-color:var(--purple);color:var(--purple-light);background:rgba(164,99,214,.04)}
+.srv-add .plus{font-size:2.2rem;line-height:1;font-weight:300}
+.srv-modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:30px;width:520px;max-width:92vw;max-height:90vh;overflow-y:auto;text-align:left}
+
 /* ====== RESPONSIVE ====== */
 @media(max-width:768px){
 .main{padding:20px 16px}
 .stat-grid{grid-template-columns:1fr 1fr}
+.srv-grid{grid-template-columns:1fr}
 .form-row{flex-direction:column}
 }
 </style>
@@ -163,6 +195,32 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 </div>
 </div>
 
+<!-- ====== SERVER MODAL ====== -->
+<div class="modal-overlay" id="srvModal">
+<div class="srv-modal">
+    <h3 style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;margin-bottom:4px" id="srvModalTitle">Add Server</h3>
+    <p style="color:var(--text2);font-size:.84rem;margin-bottom:18px">Nickname &amp; SFTP details are stored only on this device — they never touch the server.</p>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">Nickname (yours)</label><input class="form-input" id="srvNick" placeholder="My Gens Server"></div>
+        <div class="form-group"><label class="form-label">Icon (emoji or image URL)</label><input class="form-input" id="srvIcon" placeholder="🟣 or https://..."></div>
+    </div>
+    <div class="form-group"><label class="form-label">Minehut Server Name <span style="font-weight:400;text-transform:none;color:var(--text3)">— for live status (optional)</span></label><input class="form-input" id="srvMhName" placeholder="gcore"></div>
+    <div class="form-row">
+        <div class="form-group" style="flex:2"><label class="form-label">SFTP Host</label><input class="form-input" id="srvHost" placeholder="sftp.minehut.com"></div>
+        <div class="form-group" style="flex:1"><label class="form-label">Port</label><input class="form-input" id="srvPort" placeholder="2022"></div>
+    </div>
+    <div class="form-row">
+        <div class="form-group"><label class="form-label">SFTP Username</label><input class="form-input" id="srvUser" placeholder="user.xxxxx"></div>
+        <div class="form-group"><label class="form-label">SFTP Password / Key</label><input type="password" class="form-input" id="srvPass" placeholder="password or private key"></div>
+    </div>
+    <div class="confirm-error" id="srvErr"></div>
+    <div class="modal-btns" style="justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="closeSrvModal()">Cancel</button>
+        <button class="btn btn-purple" onclick="saveServer()">Save Server</button>
+    </div>
+</div>
+</div>
+
 <!-- ====== TOAST ====== -->
 <div class="toast" id="toast"></div>
 
@@ -179,6 +237,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <a class="sidebar-link active" onclick="showPage('dashboard')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         <span>Dashboard</span>
+    </a>
+    <a class="sidebar-link" onclick="showPage('servers')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><line x1="6" y1="7" x2="6.01" y2="7"/><line x1="6" y1="17" x2="6.01" y2="17"/></svg>
+        <span>Servers</span>
     </a>
     <div class="sidebar-label">Management</div>
     <a class="sidebar-link" onclick="showPage('mods')">
@@ -235,6 +297,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             <button class="btn btn-ghost" onclick="window.open('https://minehut.com/dashboard','_blank')">Minehut Panel</button>
         </div>
     </div>
+</div>
+
+<!-- SERVERS DASHBOARD -->
+<div class="page" id="page-servers">
+    <div class="page-title">Servers</div>
+    <div class="page-sub">Your GCore dashboard for every server — nickname them, connect over SFTP, and edit them all in one place.</div>
+    <div class="srv-grid" id="srvGrid"></div>
 </div>
 
 <!-- MOD ACCOUNTS -->
@@ -619,6 +688,7 @@ function showPage(id) {
     // Jump to top + force an immediate repaint — fixes pages showing blank until you scroll
     window.scrollTo(0, 0);
     void pg.offsetHeight;
+    if (id === 'servers') loadServers();
     if (id === 'sftp') { mountSftpFrame(); setTimeout(sendMhCredsToEditor, 600); }
 }
 
@@ -699,6 +769,130 @@ function loadDashboard() {
 }
 
 setInterval(loadDashboard, 30000);
+
+/* ============================================================
+   SERVERS DASHBOARD (local-only — nicknames & SFTP creds never leave this device)
+   ============================================================ */
+function getServers(){ try { return JSON.parse(localStorage.getItem('gcore_servers')||'[]'); } catch(e){ return []; } }
+function setServers(s){ localStorage.setItem('gcore_servers', JSON.stringify(s)); }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function timeAgo(ts){ if(!ts) return '—'; const d=Date.now()-Number(ts); if(d<0) return '—'; const days=Math.floor(d/86400000); if(days>0) return days+' day'+(days>1?'s':'')+' ago'; const h=Math.floor(d/3600000); if(h>0) return h+'h ago'; const m=Math.floor(d/60000); return (m>0?m:1)+'m ago'; }
+
+let editingSrvIdx = -1;
+
+function loadServers(){
+    const grid = document.getElementById('srvGrid');
+    if(!grid) return;
+    const servers = getServers();
+    let html = servers.map((s,i)=>srvCardHTML(s,i)).join('');
+    html += '<div class="srv-add" onclick="openSrvModal(-1)"><div class="plus">+</div><div style="font-weight:600">Add a Server</div><div style="font-size:.76rem">Connect over SFTP</div></div>';
+    grid.innerHTML = html;
+    servers.forEach((s,i)=>{ if(s.mhName) refreshSrvStatus(s.mhName, i); });
+}
+
+function srvCardHTML(s,i){
+    const status = s._status || 'hibernating';
+    const ic = s.icon ? (/^https?:/.test(s.icon)?'<img src="'+escapeHtml(s.icon)+'">':escapeHtml(s.icon)) : '🖥️';
+    return '<div class="srv-card '+status+'" id="srvCard-'+i+'">'
+      +'<div class="accent"></div>'
+      +'<div class="srv-head">'
+        +'<div class="srv-icon">'+ic+'</div>'
+        +'<div style="min-width:0;flex:1">'
+          +'<div class="srv-name">'+escapeHtml(s.nickname||s.mhName||'Server')+'</div>'
+          +'<div class="srv-host">'+escapeHtml(s.host||s.mhName||'no host set')+'</div>'
+        +'</div>'
+        +'<div class="srv-status '+status+'" id="srvStatus-'+i+'"><span class="sdot"></span>'+status+'</div>'
+      +'</div>'
+      +'<div class="srv-meta">'
+        +'<div><div class="k">Plan</div><div class="v" id="srvPlan-'+i+'">'+escapeHtml(s.plan||'—')+'</div></div>'
+        +'<div><div class="k">Last Online</div><div class="v" id="srvLast-'+i+'">'+escapeHtml(s.last||'—')+'</div></div>'
+      +'</div>'
+      +'<div class="srv-actions">'
+        +'<button class="primary" onclick="manageServer('+i+')">⚙ Open Editor</button>'
+        +'<button onclick="openSrvModal('+i+')">Edit</button>'
+        +'<button onclick="deleteServer('+i+')">Delete</button>'
+      +'</div>'
+    +'</div>';
+}
+
+async function refreshSrvStatus(name, i){
+    try{
+        const r = await fetch('https://api.minehut.com/server/'+encodeURIComponent(name)+'?byName=true');
+        if(!r.ok) return;
+        const d = await r.json();
+        const s = d.server; if(!s) return;
+        const servers = getServers(); if(!servers[i]) return;
+        const st = s.suspended ? 'suspended' : (s.online ? 'online' : 'hibernating');
+        servers[i]._status = st;
+        servers[i].plan = s.server_plan || servers[i].plan || '—';
+        servers[i].last = s.online ? 'Online now' : timeAgo(s.last_online || s.lastOnline);
+        setServers(servers);
+        const card = document.getElementById('srvCard-'+i);
+        const badge = document.getElementById('srvStatus-'+i);
+        const planEl = document.getElementById('srvPlan-'+i);
+        const lastEl = document.getElementById('srvLast-'+i);
+        if(card) card.className = 'srv-card '+st;
+        if(badge){ badge.className='srv-status '+st; badge.innerHTML='<span class="sdot"></span>'+st; }
+        if(planEl) planEl.textContent = servers[i].plan;
+        if(lastEl) lastEl.textContent = servers[i].last;
+    }catch(e){}
+}
+
+function openSrvModal(idx){
+    editingSrvIdx = idx;
+    const s = idx>=0 ? (getServers()[idx]||{}) : {};
+    document.getElementById('srvModalTitle').textContent = idx>=0 ? 'Edit Server' : 'Add Server';
+    document.getElementById('srvNick').value = s.nickname||'';
+    document.getElementById('srvIcon').value = s.icon||'';
+    document.getElementById('srvMhName').value = s.mhName||'';
+    document.getElementById('srvHost').value = s.host||'';
+    document.getElementById('srvPort').value = s.port||'';
+    document.getElementById('srvUser').value = s.user||'';
+    document.getElementById('srvPass').value = s.pass||'';
+    document.getElementById('srvErr').textContent = '';
+    document.getElementById('srvModal').classList.add('show');
+}
+function closeSrvModal(){ document.getElementById('srvModal').classList.remove('show'); editingSrvIdx=-1; }
+
+function saveServer(){
+    const obj = {
+        nickname: document.getElementById('srvNick').value.trim(),
+        icon: document.getElementById('srvIcon').value.trim(),
+        mhName: document.getElementById('srvMhName').value.trim(),
+        host: document.getElementById('srvHost').value.trim(),
+        port: document.getElementById('srvPort').value.trim(),
+        user: document.getElementById('srvUser').value.trim(),
+        pass: document.getElementById('srvPass').value
+    };
+    if(!obj.nickname && !obj.mhName){ document.getElementById('srvErr').textContent='Give it at least a nickname or a Minehut name.'; return; }
+    const servers = getServers();
+    if(editingSrvIdx>=0){ obj._status = servers[editingSrvIdx]?._status; servers[editingSrvIdx]=obj; }
+    else servers.push(obj);
+    setServers(servers);
+    closeSrvModal();
+    loadServers();
+    toast('Server saved.');
+}
+
+function deleteServer(idx){
+    const servers = getServers();
+    const nm = servers[idx]?.nickname || servers[idx]?.mhName || 'this server';
+    requireConfirm('Remove '+nm+' from your dashboard (local only)', ()=>{
+        servers.splice(idx,1); setServers(servers); loadServers(); toast('Removed '+nm+'.');
+    });
+}
+
+function manageServer(idx){
+    const s = getServers()[idx];
+    if(!s) return;
+    localStorage.setItem('gcore_active_server', JSON.stringify(s));
+    showPage('sftp');
+    setTimeout(()=>{
+        const f = document.getElementById('sftpFrame');
+        if(f && f.contentWindow) f.contentWindow.postMessage({ type:'gcore-sftp-server', server:s }, '*');
+    }, 800);
+    toast('Opening editor for '+(s.nickname||s.mhName||'server')+'…');
+}
 
 /* ============================================================
    MOD ACCOUNTS (stored on SFTP server via editor API)
