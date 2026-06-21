@@ -776,8 +776,8 @@ setInterval(loadDashboard, 30000);
 let _serversCache = [];
 async function getServers(){
     try {
-        const key = editorKey(); if (!key) return _serversCache;
-        const r = await fetch(EDITOR_URL + '/api/servers', { headers: { 'x-editor-key': key } });
+        const h = {}; const key = editorKey(); if (key) h['x-editor-key'] = key;
+        const r = await fetch(EDITOR_URL + '/api/servers', { headers: h });
         if (r.ok) { _serversCache = await r.json(); return _serversCache; }
     } catch(e){}
     return _serversCache;
